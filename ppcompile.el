@@ -99,8 +99,8 @@
     (shell-command-to-string command)))
 
 (defun ppcompile--compile ()
-  "Compile remotely and convert path in output."
-  (let* ((compilation-filter-hook compilation-filter-hook)
+  "Compile projects remotely and map paths in the output."
+  (let* (;(compilation-filter-hook compilation-filter-hook)
          compile-command)
     (save-some-buffers)
     (setq compile-command (format "ssh -p %d %s@%s %s" ; TODO add a variable for ssh path
@@ -108,21 +108,24 @@
                                   ppcompile-ssh-user
                                   ppcompile-ssh-host
                                   ppcompile-compile-command))
-    (message "compile command: %s" compile-command)
-    ; (add-hook 'compilation-filter-hook #'ppcompile--convert-path)
-    (compilation-start compile-command t) ; password may be needed
-    (with-current-buffer compilation-last-buffer
-      (let ((inhibit-read-only t))
-        (dolist (map ppcompile-path-map-list)
-          (ppcompile--convert-path (car map) (cdr map)))))))
+    ; (message "compile command: %s" compile-command)
+    (add-hook 'compilation-filter-hook #'ppcompile--convert-path)
+                                        ;(compilation-start compile-command t) ; password may be needed
+    (compile compile-command t) ; it seems comint doesn't invoke 'compilation-filter-hook
+    ))
 
 ;;; TODO check compilation-filter-hook
-(defun ppcompile--convert-path (src dst)
+(defun ppcompile--convert-path ()
   "Convert paths matching SRC to DST in current buffer."
-  (goto-char (point-min))
-  (while (search-forward src nil t)
-    (message "XXX convert %s to %s" src dst)
-    (replace-match dst)))
+  (message "XXX convert path...")
+  (with-current-buffer compilation-last-buffer
+    (save-restriction
+      (narrow-to-region compilation-filter-start (point))
+      (goto-char (point-min))
+      (dolist (map ppcompile-path-map-list)
+        (while (search-forward (car map) nil t)
+          (message "XXX convert %s to %s" (car map) (cdr map))
+          (replace-match (cdr map)))))))
 
 (provide 'ppcompile)
 
