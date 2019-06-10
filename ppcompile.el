@@ -100,31 +100,24 @@
 
 (defun ppcompile--compile ()
   "Compile projects remotely and map paths in the output."
-  (let* (;(compilation-filter-hook compilation-filter-hook)
-         compile-command)
+  (let* (compile-command)
     (save-some-buffers)
+    (add-to-list 'compilation-finish-functions #'ppcompile--convert-path) ; XXX how to achieve this elegantly?
     (setq compile-command (format "ssh -p %d %s@%s %s" ; TODO add a variable for ssh path
                                   ppcompile-ssh-port
                                   ppcompile-ssh-user
                                   ppcompile-ssh-host
                                   ppcompile-compile-command))
-    ; (message "compile command: %s" compile-command)
-    (add-hook 'compilation-filter-hook #'ppcompile--convert-path)
-                                        ;(compilation-start compile-command t) ; password may be needed
-    (compile compile-command t) ; it seems comint doesn't invoke 'compilation-filter-hook
+    (compilation-start compile-command t) ; password may be needed
     ))
 
-;;; TODO check compilation-filter-hook
-(defun ppcompile--convert-path ()
+(defun ppcompile--convert-path (buffer finish-msg)
   "Convert paths matching SRC to DST in current buffer."
-  (message "XXX convert path...")
-  (with-current-buffer compilation-last-buffer
-    (save-restriction
-      (narrow-to-region compilation-filter-start (point))
-      (goto-char (point-min))
+  (with-current-buffer buffer
+    (let ((inhibit-read-only t))
       (dolist (map ppcompile-path-map-list)
+        (goto-char (point-min))
         (while (search-forward (car map) nil t)
-          (message "XXX convert %s to %s" (car map) (cdr map))
           (replace-match (cdr map)))))))
 
 (provide 'ppcompile)
