@@ -30,7 +30,7 @@
 
 ;;; Code:
 
-; depends on rsync ssh expect
+; depends on rsync ssh expect(Tcl in general)
 ; host port user passwd srcdir dstdir compile-command
 
 (require 'compile)
@@ -83,6 +83,9 @@
   "A list of cons'es tells how to map remote paths to local paths."
   :group 'ppcompile)
 
+(defconst ppcompile--with-password-path (concat (file-name-directory (buffer-file-name))
+                                                "with-password.exp"))
+
 (defun ppcompile--rsync ()
   "Rsync files from local machine to remote one."
   (let (rsync-args command full-dst)
@@ -103,12 +106,15 @@
   (let* (compile-command)
     (save-some-buffers)
     (add-to-list 'compilation-finish-functions #'ppcompile--convert-path) ; XXX how to achieve this elegantly?
-    (setq compile-command (format "ssh -p %d %s@%s %s" ; TODO add a variable for ssh path
+    (setq compile-command (format "expect %s %s ssh -p %d %s@%s %s" ; TODO add a variable for ssh path
+                                  ppcompile--with-password-path
+                                  ppcompile-ssh-password ; TODO hide in env
                                   ppcompile-ssh-port
                                   ppcompile-ssh-user
                                   ppcompile-ssh-host
                                   ppcompile-compile-command))
-    (compilation-start compile-command t) ; password may be needed
+    (compilation-start compile-command)
+                                        ;(compilation-start compile-command t) ; password may be needed, so comint mode
     ))
 
 (defun ppcompile--convert-path (buffer finish-msg)
