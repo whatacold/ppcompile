@@ -94,8 +94,9 @@
 If `project-current' finds the root, return it;
 or else fallback to the `.git' directory."
   (or (cdr (project-current))
-      (locate-dominating-file default-directory ".git")
-      default-directory)) ; TODO use lambda to exclude .git file
+      (locate-dominating-file default-directory #'(lambda (dir)
+                                                    (equal ".git" (file-name-nondirectory dir))))
+      default-directory))
 
 (defun ppcompile--ping ()
   "Rsync files from local machine to remote one."
