@@ -150,7 +150,13 @@ or else fallback to the `.git' directory."
     (compilation-start compile-command)))
 
 (defun ppcompile (&optional dont-pong)
-  "TODO"
+  "Ping-pong compile current project.
+
+Where ping means rsync the project to a remote machine,
+and pong means compiling on the remote machine and get the
+compilation output, including errors, back.
+
+If `DONT-PONG' is not nil, it will only rsync the project."
   (interactive "P")
   (let* ((rsync-result (ppcompile--ping)))
     (if (not (eq 0 (car rsync-result)))
