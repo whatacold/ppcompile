@@ -1,0 +1,45 @@
+This package tries to ease the workflow of local development, compilation on remote machines, and fixing errors locally with =next-error= .
+
+It rsync'es ("ping") current project to a remote machine, then compiles ("pong") there and convert remote paths in the compilation output to local paths, so that =compilation-mode= can find files correctly.
+
+* Dependencies
+
+- built-in packages: compile, auth-source, project
+- rsync
+- ssh
+- expect
+
+Only tested with GNU Emacs 26.1 on Linux.
+
+* How to use
+
+=M-x ppcompile= to rsync and compile current project, sometimes you may just want to rsync files, then prefix the command, i.e. =M-u M-x ppcompile= .
+
+You need to do some settings:
+- =ppcompile-ssh-host= :: the remote host
+- =ppcompile-ssh-port= :: the ssh port of remote host, defaults to 22
+- =ppcompile-ssh-user= :: user name
+- =ppcompile-rsync-dst-dir= :: remote containing directory for the project
+- =ppcompile-remote-compile-command= :: compile command on remote host
+- =ppcompile-path-mapping-list= :: alist for path mapping
+  =car= is remote path and =cdr= local path for each element, all path should be in absolute path.
+
+You may consider putting these in =.dir-locals.el= if you have more than 1 remote hosts.
+There is an example of [[https://github.com/whatacold/ppcompile-test-project/blob/master/.dir-locals.el][.dir-locals.el]] example in test project.
+
+Besides that, you need to configure your password in some =auth-source= backends, for example =~/.authinfo= :
+#+BEGIN_SRC
+machine localhost port 22 login try password 1
+#+END_SRC
+
+Also pay attention to your Emacs varaible =auth-sources= to inlude your setting.
+
+* Final words
+
+This is my first time to roll out a package seriously, I believe there are much to improve.
+Pull requests or issues are very welcome, but I can't promise I'll respond quickly, sorry :(
+
+Some TODOs:
+- [ ] Add tests
+- [ ] Improve README and code
+- [ ] Try to remove dependency on =expect=
