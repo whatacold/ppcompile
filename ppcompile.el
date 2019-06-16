@@ -3,7 +3,7 @@
 ;; Author: Guangwang Huang
 ;; Maintainer: Guangwang Huang
 ;; Version: 0.1
-;; Package-Requires: ()
+;; Package-Requires: (compile, project, auth-source)
 ;; Homepage: homepage
 ;; Keywords: tools
 
@@ -30,11 +30,9 @@
 
 ;;; Code:
 
-; depends on rsync ssh expect(Tcl in general)
-; host port user passwd srcdir dstdir compile-command
-
 (require 'compile)
 (require 'auth-source)
+(require 'project)
 
 (defgroup ppcompile nil
   "Run a ping pong compilation to build remotely and fix errors locally."
@@ -63,31 +61,37 @@
   "Arguments for `rsync', in addition to `ppcompile-rsync-exclude-list'."
   :group 'ppcompile)
 
-;;; TODO could use mapping to deduce
+;;; TODO use mapping to deduce it?
 (defcustom ppcompile-rsync-dst-dir nil
   "Destination directory to rsync files into."
   :group 'ppcompile)
 
-(defcustom ppcompile-compile-command nil
+(defcustom ppcompile-remote-compile-command nil
   "Compile command to build the project on the remote machine."
   :group 'ppcompile)
 
 (defcustom ppcompile-path-mapping-list nil
-  "A list of cons'es tells how to map remote paths to local paths."
+  "A list of cons'es tells how to map remote paths to local paths.
+All paths should be in absolute path."
   :group 'ppcompile)
 
 (defconst ppcompile--with-password-script-path (concat (file-name-directory (buffer-file-name))
                                                        "with-password.exp")
   "The path of the helper expect script, with-password.exp")
 
+(defvar ppcompile--current-buffer nil
+  "Internal variable to keep current buffer, in order to fetch buffer-local variables.")
+
 (defun ppcompile--convert-path (buffer finish-msg)
-  "Convert paths matching SRC to DST in current buffer."
-  (with-current-buffer buffer
-    (let ((inhibit-read-only t))
-      (dolist (map ppcompile-path-mapping-list)
-        (goto-char (point-min))
-        (while (search-forward (car map) nil t)
-          (replace-match (cdr map)))))))
+  "Convert paths matching SRC to DST in current `BUFFER'."
+  (let ((path-mapping-list (with-current-buffer ppcompile--current-buffer
+                             ppcompile-path-mapping-list)))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (dolist (map path-mapping-list)
+          (goto-char (point-min))
+          (while (search-forward (car map) nil t)
+            (replace-match (cdr map))))))))
 
 (defun ppcompile--project-root ()
   "Find the root directory of current prject.
@@ -96,7 +100,7 @@ If `project-current' finds the root, return it;
 or else fallback to the `.git' directory."
   (or (cdr (project-current))
       (locate-dominating-file default-directory #'(lambda (dir)
-                                                    (equal ".git" (file-name-nondirectory dir))))
+                                                    (file-directory-p (expand-file-name ".git" dir))))
       default-directory))
 
 (defun ppcompile--get-ssh-password ()
@@ -123,32 +127,32 @@ or else fallback to the `.git' directory."
          (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
                                             (ppcompile--get-ssh-password))
                                     process-environment))
+         (rsync-args (mapcar #'(lambda (pattern) (format "--exclude=%s" pattern))
+                             ppcompile-rsync-exclude-list))
+         (project-path (expand-file-name default-directory))
          (rsync-status 1)
          rsync-output)
+    (push (format "--rsh=ssh -p %d" ppcompile-ssh-port) rsync-args)
+    (when ppcompile-rsync-additional-args
+      (push ppcompile-rsync-additional-args rsync-args))
+
+    ;; trailing slash makes a difference for rsync, trim it if any.
+    (if (equal (substring project-path
+                          (1- (length project-path))) "/" )
+        (setq project-path (substring project-path 0 (1- (length project-path)))))
+    (push project-path rsync-args)
+
+    (push (format "%s@%s:%s"
+                  ppcompile-ssh-user
+                  ppcompile-ssh-host
+                  ppcompile-rsync-dst-dir)
+          rsync-args)
     (with-temp-buffer
-      (let ((rsync-args (mapcar #'(lambda (pattern) (format "--exclude=%s" pattern))
-                                ppcompile-rsync-exclude-list))
-            (project-path (expand-file-name default-directory)))
-        (push (format "--rsh=ssh -p %d" ppcompile-ssh-port) rsync-args)
-        (when ppcompile-rsync-additional-args
-          (push ppcompile-rsync-additional-args rsync-args))
-
-        ;; trailing slash makes a difference for rsync, trim it if any.
-        (if (equal (substring project-path
-                              (1- (length project-path))) "/" )
-            (setq project-path (substring project-path 0 (1- (length project-path)))))
-        (push project-path rsync-args)
-
-        (push (format "%s@%s:%s"
-                      ppcompile-ssh-user
-                      ppcompile-ssh-host
-                      ppcompile-rsync-dst-dir)
-              rsync-args)
-        (setq rsync-status (apply #'call-process "expect" nil (current-buffer) nil
-                                  ppcompile--with-password-script-path
-                                  "rsync"
-                                  (nreverse rsync-args)))
-        (setq rsync-output (buffer-substring-no-properties (point-min) (point-max)))))
+      (setq rsync-status (apply #'call-process "expect" nil (current-buffer) nil
+                                ppcompile--with-password-script-path
+                                "rsync"
+                                (nreverse rsync-args)))
+      (setq rsync-output (buffer-substring-no-properties (point-min) (point-max))))
     (cons rsync-status rsync-output)))
 
 (defun ppcompile--pong ()
@@ -159,13 +163,14 @@ or else fallback to the `.git' directory."
                                         compilation-environment))
          compile-command)
     (save-some-buffers)
+    (setq ppcompile--current-buffer (current-buffer))
     (add-to-list 'compilation-finish-functions #'ppcompile--convert-path) ; XXX how to achieve this in an elegant way?
     (setq compile-command (format "expect %s ssh -p %d %s@%s %s"
                                   ppcompile--with-password-script-path
                                   ppcompile-ssh-port
                                   ppcompile-ssh-user
                                   ppcompile-ssh-host
-                                  ppcompile-compile-command))
+                                  ppcompile-remote-compile-command))
     (compilation-start compile-command)))
 
 ;;;###autoload
