@@ -97,7 +97,7 @@ or else fallback to the `.git' directory."
       (locate-dominating-file default-directory ".git")
       default-directory)) ; TODO use lambda to exclude .git file
 
-(defun ppcompile-ping ()
+(defun ppcompile--ping ()
   "Rsync files from local machine to remote one."
   (let* ((default-directory (ppcompile--project-root))
          (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
@@ -107,11 +107,18 @@ or else fallback to the `.git' directory."
          rsync-output)
     (with-temp-buffer
       (let ((rsync-args (mapcar #'(lambda (pattern) (format "--exclude=%s" pattern))
-                                ppcompile-rsync-exclude-list)))
+                                ppcompile-rsync-exclude-list))
+            (project-path (expand-file-name default-directory)))
         (push (format "--rsh=ssh -p %d" ppcompile-ssh-port) rsync-args)
         (when ppcompile-rsync-additional-args
           (push ppcompile-rsync-additional-args rsync-args))
-        (push (expand-file-name default-directory) rsync-args)
+
+        ;; trailing slash makes a difference for rsync, trim it if any.
+        (if (equal (substring project-path
+                              (1- (length project-path))) "/" )
+            (setq project-path (substring project-path 0 (1- (length project-path)))))
+        (push project-path rsync-args)
+
         (push (format "%s@%s:%s"
                            ppcompile-ssh-user
                            ppcompile-ssh-host
@@ -124,7 +131,7 @@ or else fallback to the `.git' directory."
         (setq rsync-output (buffer-substring-no-properties (point-min) (point-max)))))
     (cons rsync-status rsync-output)))
 
-(defun ppcompile-pong ()
+(defun ppcompile--pong ()
   "Compile projects remotely and map paths in the output."
   (let* ((default-directory (ppcompile--project-root))
          (compilation-environment (cons (format "PPCOMPILE_PASSWORD=%s"
@@ -139,17 +146,16 @@ or else fallback to the `.git' directory."
                                   ppcompile-ssh-user
                                   ppcompile-ssh-host
                                   ppcompile-compile-command))
-    (compilation-start compile-command)
-                                        ;(compilation-start compile-command t) ; password may be needed, so comint mode
-    ))
+    (compilation-start compile-command)))
 
-(defun ppcompile (&optional dont't-compile)
+(defun ppcompile (&optional dont-pong)
+  "TODO"
   (interactive "P")
-  (let* ((rsync-result (ppcompile-ping)))
+  (let* ((rsync-result (ppcompile--ping)))
     (if (not (eq 0 (car rsync-result)))
         (message "Failed to rsync current project to the remote machine")
-      (unless don't-compile
-        (ppcompile-pong)))))
+      (unless dont-pong
+        (ppcompile--pong)))))
 
 (provide 'ppcompile)
 
