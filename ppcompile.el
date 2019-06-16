@@ -34,6 +34,7 @@
 ; host port user passwd srcdir dstdir compile-command
 
 (require 'compile)
+(require 'auth-source)
 
 (defgroup ppcompile nil
   "Run a ping pong compilation to build remotely and fix errors locally."
@@ -41,7 +42,7 @@
 
 (defcustom ppcompile-ssh-host nil
   "Host of remote machine, used in rsync'ing and compiling."
-  ; TODO add :type
+                                        ; TODO add :type
   :group 'ppcompile)
 
 (defcustom ppcompile-ssh-port 22
@@ -53,7 +54,7 @@
   :group 'ppcompile)
 
 (defcustom ppcompile-rsync-exclude-list '("*.o"
-                                         ".git*"
+                                          ".git*"
                                           ".svn*")
   "Files the `rsync' should exclude."
   :group 'ppcompile)
@@ -71,7 +72,7 @@
   "Compile command to build the project on the remote machine."
   :group 'ppcompile)
 
-(defcustom ppcompile-path-map-list nil
+(defcustom ppcompile-path-mapping-list nil
   "A list of cons'es tells how to map remote paths to local paths."
   :group 'ppcompile)
 
@@ -83,7 +84,7 @@
   "Convert paths matching SRC to DST in current buffer."
   (with-current-buffer buffer
     (let ((inhibit-read-only t))
-      (dolist (map ppcompile-path-map-list)
+      (dolist (map ppcompile-path-mapping-list)
         (goto-char (point-min))
         (while (search-forward (car map) nil t)
           (replace-match (cdr map)))))))
@@ -98,11 +99,29 @@ or else fallback to the `.git' directory."
                                                     (equal ".git" (file-name-nondirectory dir))))
       default-directory))
 
+(defun ppcompile--get-ssh-password ()
+  "Get ssh password using auth-source."
+  (let ((secret
+         (plist-get
+          (nth 0
+               (auth-source-search :max 1
+                                   :host ppcompile-ssh-host
+                                   :user ppcompile-ssh-user
+                                   ;; secrets.el wouldn’t accept a number
+                                   :port (if (numberp ppcompile-ssh-port)
+                                             (number-to-string ppcompile-ssh-port)
+                                           ppcompile-ssh-port)
+                                   :require '(:secret)))
+          :secret)))
+    (if (functionp secret)
+        (funcall secret)
+      secret)))
+
 (defun ppcompile--ping ()
   "Rsync files from local machine to remote one."
   (let* ((default-directory (ppcompile--project-root))
          (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
-                                            ppcompile-ssh-password)
+                                            (ppcompile--get-ssh-password))
                                     process-environment))
          (rsync-status 1)
          rsync-output)
@@ -121,14 +140,14 @@ or else fallback to the `.git' directory."
         (push project-path rsync-args)
 
         (push (format "%s@%s:%s"
-                           ppcompile-ssh-user
-                           ppcompile-ssh-host
-                           ppcompile-rsync-dst-dir)
+                      ppcompile-ssh-user
+                      ppcompile-ssh-host
+                      ppcompile-rsync-dst-dir)
               rsync-args)
         (setq rsync-status (apply #'call-process "expect" nil (current-buffer) nil
-                        ppcompile--with-password-script-path
-                        "rsync"
-                        (nreverse rsync-args)))
+                                  ppcompile--with-password-script-path
+                                  "rsync"
+                                  (nreverse rsync-args)))
         (setq rsync-output (buffer-substring-no-properties (point-min) (point-max)))))
     (cons rsync-status rsync-output)))
 
@@ -136,7 +155,7 @@ or else fallback to the `.git' directory."
   "Compile projects remotely and map paths in the output."
   (let* ((default-directory (ppcompile--project-root))
          (compilation-environment (cons (format "PPCOMPILE_PASSWORD=%s"
-                                                ppcompile-ssh-password)
+                                                (ppcompile--get-ssh-password))
                                         compilation-environment))
          compile-command)
     (save-some-buffers)
@@ -149,6 +168,7 @@ or else fallback to the `.git' directory."
                                   ppcompile-compile-command))
     (compilation-start compile-command)))
 
+;;;###autoload
 (defun ppcompile (&optional dont-pong)
   "Ping-pong compile current project.
 
