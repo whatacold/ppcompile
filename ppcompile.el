@@ -52,19 +52,14 @@
   "User for remote compilations."
   :group 'ppcompile)
 
-;;; XXX rsync depends on ssh
-(defcustom ppcompile-rsync-args '("--exclude=*.o"
- "--exclude=*.log"
- "--exclude=*.so"
- "--exclude=unittest_main"
- "--exclude=.git*"
- "--exclude=.ccls-cache*"
- "--exclude=.cquery_cached_index*"
- "--exclude=.vscode*"
- "--exclude=.svn*"
- "--exclude=tags"
- "--exclude=cscope.*") ; TODO define a exclude variable
-  "Arguments to `rsync' command to sync project to remote host."
+(defcustom ppcompile-rsync-exclude-list '("*.o"
+                                         ".git*"
+                                          ".svn*")
+  "Files the `rsync' should exclude."
+  :group 'ppcompile)
+
+(defcustom ppcompile-rsync-additional-args "-az"
+  "Arguments for `rsync', in addition to `ppcompile-rsync-exclude-list'."
   :group 'ppcompile)
 
 ;;; TODO could use mapping to deduce
@@ -108,25 +103,26 @@ or else fallback to the `.git' directory."
          (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
                                             ppcompile-ssh-password)
                                     process-environment))
-         (process-connection-type nil)
-         rsync-args full-dst rc output)
-    (message "p e: %s" process-environment)
-    (setq rsync-args "-avz") ; TODO add
-    (setq full-dst (format "%s@%s:%s"
+         (rsync-status 1)
+         rsync-output)
+    (with-temp-buffer
+      (let ((rsync-args (mapcar #'(lambda (pattern) (format "--exclude=%s" pattern))
+                                ppcompile-rsync-exclude-list)))
+        (push (format "--rsh=ssh -p %d" ppcompile-ssh-port) rsync-args)
+        (when ppcompile-rsync-additional-args
+          (push ppcompile-rsync-additional-args rsync-args))
+        (push (expand-file-name default-directory) rsync-args)
+        (push (format "%s@%s:%s"
                            ppcompile-ssh-user
                            ppcompile-ssh-host
-                           ppcompile-rsync-dst-dir))
-    (with-temp-buffer
-      (setq rc (call-process "expect" nil (current-buffer) nil
-                             ppcompile--with-password-script-path
-                             "rsync"
-                             "-e"
-                             (format "ssh -p %d" ppcompile-ssh-port)
-                             rsync-args
-                             (expand-file-name default-directory)
-                             full-dst))
-      (setq output (buffer-substring-no-properties (point-min) (point-max))))
-    (cons rc output)))
+                           ppcompile-rsync-dst-dir)
+              rsync-args)
+        (setq rsync-status (apply #'call-process "expect" nil (current-buffer) nil
+                        ppcompile--with-password-script-path
+                        "rsync"
+                        (nreverse rsync-args)))
+        (setq rsync-output (buffer-substring-no-properties (point-min) (point-max)))))
+    (cons rsync-status rsync-output)))
 
 (defun ppcompile-pong ()
   "Compile projects remotely and map paths in the output."
