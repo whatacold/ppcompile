@@ -42,22 +42,23 @@
   :group 'tools)
 
 (defcustom ppcompile-ssh-host nil
-  "Host of remote machine, used in rsync'ing and compiling."
+  "Host of the remote machine, where remote compilation runs."
                                         ; TODO add :type
   :group 'ppcompile)
 
 (defcustom ppcompile-ssh-port 22
-  "Port of remote machine."
+  "SSH port of the remote machine."
   :group 'ppcompile)
 
-  "User for remote compilations."
 (defcustom ppcompile-ssh-user (user-login-name)
+  "SSH user to login for remote compilations."
   :group 'ppcompile)
 
 (defcustom ppcompile-rsync-exclude-list '("*.o"
                                           ".git*"
                                           ".svn*")
-  "Files the `rsync' should exclude."
+  "Files that `rsync' should exclude.
+See `--exclude' option of `rsync' for the syntax."
   :group 'ppcompile)
 
 (defcustom ppcompile-rsync-additional-args "-az"
@@ -66,7 +67,7 @@
 
 ;;; TODO use mapping to deduce it?
 (defcustom ppcompile-rsync-dst-dir nil
-  "Destination directory to rsync files into."
+  "Destination directory to `rsync' files into."
   :group 'ppcompile)
 
 (defcustom ppcompile-remote-compile-command nil
@@ -75,18 +76,21 @@
 
 (defcustom ppcompile-path-mapping-alist nil
   "A list of cons'es tells how to map remote paths to local paths.
-All paths should be in absolute path."
+Each cons cell's key is remote path, and value is local path, all paths
+should be in absolute path."
   :group 'ppcompile)
 
-(defconst ppcompile--with-password-script-path (concat (file-name-directory (buffer-file-name))
-                                                       "with-password.exp")
-  "The path of the helper expect script, with-password.exp")
+(defconst ppcompile--with-password-script-path
+  (concat (file-name-directory (buffer-file-name))
+          "with-password.exp")
+  "The path of the helper expect script `with-password.exp'.")
 
 (defvar ppcompile--current-buffer nil
   "Internal variable to keep current buffer, in order to fetch buffer-local variables.")
 
-(defun ppcompile--convert-path (buffer finish-msg)
-  "Convert paths matching SRC to DST in current `BUFFER'."
+(defun ppcompile--replace-path (buffer finish-msg)
+  "Replace paths in BUFFER, according to `ppcompile-path-mapping-alist'.
+Argument FINISH-MSG is a string describing how the process finished."
   (let ((path-mapping-list (with-current-buffer ppcompile--current-buffer
                              ppcompile-path-mapping-alist)))
     (with-current-buffer buffer
@@ -97,17 +101,16 @@ All paths should be in absolute path."
             (replace-match (cdr map))))))))
 
 (defun ppcompile--project-root ()
-  "Find the root directory of current prject.
-
+  "Find the root directory of current project.
 If `project-current' finds the root, return it;
-or else fallback to the `.git' directory."
+or else fallback to use `git' root directory containing `.git'."
   (or (cdr (project-current))
       (locate-dominating-file default-directory #'(lambda (dir)
                                                     (file-directory-p (expand-file-name ".git" dir))))
       default-directory))
 
 (defun ppcompile--get-ssh-password ()
-  "Get ssh password using auth-source."
+  "Get SSH password using auth-source."
   (let ((secret
          (plist-get
           (nth 0
@@ -125,7 +128,7 @@ or else fallback to the `.git' directory."
       secret)))
 
 (defun ppcompile--ping ()
-  "Rsync files from local machine to remote one."
+  "Rsync current project from local machine to remote one."
   (let* ((default-directory (ppcompile--project-root))
          (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
                                             (ppcompile--get-ssh-password))
@@ -159,7 +162,8 @@ or else fallback to the `.git' directory."
     (cons rsync-status rsync-output)))
 
 (defun ppcompile--pong ()
-  "Compile projects remotely and map paths in the output."
+  "Compile current project remotely.
+And replace remote paths with local ones in the output."
   (let* ((default-directory (ppcompile--project-root))
          (compilation-environment (cons (format "PPCOMPILE_PASSWORD=%s"
                                                 (ppcompile--get-ssh-password))
@@ -167,7 +171,7 @@ or else fallback to the `.git' directory."
          compile-command)
     (save-some-buffers)
     (setq ppcompile--current-buffer (current-buffer))
-    (add-to-list 'compilation-finish-functions #'ppcompile--convert-path) ; XXX how to achieve this in an elegant way?
+    (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to achieve this in an elegant way?
     (setq compile-command (format "expect %s ssh -p %d %s@%s %s"
                                   ppcompile--with-password-script-path
                                   ppcompile-ssh-port
@@ -181,10 +185,10 @@ or else fallback to the `.git' directory."
   "Ping-pong compile current project.
 
 Where ping means rsync the project to a remote machine,
-and pong means compiling on the remote machine and get the
+and pong means compiling remotely and get the
 compilation output, including errors, back.
 
-If `DONT-PONG' is not nil, it will only rsync the project."
+If DONT-PONG is not nil, it will only rsync the project."
   (interactive "P")
   (let* ((rsync-result (ppcompile--ping)))
     (if (not (eq 0 (car rsync-result)))
