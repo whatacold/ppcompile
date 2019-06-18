@@ -88,9 +88,9 @@ should be in absolute path."
 (defvar ppcompile--current-buffer nil
   "Internal variable to keep current buffer, in order to fetch buffer-local variables.")
 
-(defun ppcompile--replace-path (buffer finish-msg)
+(defun ppcompile--replace-path (buffer _finish-msg)
   "Replace paths in BUFFER, according to `ppcompile-path-mapping-alist'.
-Argument FINISH-MSG is a string describing how the process finished."
+Argument _FINISH-MSG is a string describing how the process finished."
   (let ((path-mapping-list (with-current-buffer ppcompile--current-buffer
                              ppcompile-path-mapping-alist)))
     (with-current-buffer buffer
@@ -105,8 +105,8 @@ Argument FINISH-MSG is a string describing how the process finished."
 If `project-current' finds the root, return it;
 or else fallback to use `git' root directory containing `.git'."
   (or (cdr (project-current))
-      (locate-dominating-file default-directory #'(lambda (dir)
-                                                    (file-directory-p (expand-file-name ".git" dir))))
+      (locate-dominating-file default-directory (lambda (dir)
+                                                  (file-directory-p (expand-file-name ".git" dir))))
       default-directory))
 
 (defun ppcompile--get-ssh-password ()
@@ -133,7 +133,7 @@ or else fallback to use `git' root directory containing `.git'."
          (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
                                             (ppcompile--get-ssh-password))
                                     process-environment))
-         (rsync-args (mapcar #'(lambda (pattern) (format "--exclude=%s" pattern))
+         (rsync-args (mapcar (lambda (pattern) (format "--exclude=%s" pattern))
                              ppcompile-rsync-exclude-list))
          (project-path (expand-file-name default-directory))
          (rsync-status 1)
