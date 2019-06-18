@@ -73,7 +73,7 @@
   "Compile command to build the project on the remote machine."
   :group 'ppcompile)
 
-(defcustom ppcompile-path-mapping-list nil
+(defcustom ppcompile-path-mapping-alist nil
   "A list of cons'es tells how to map remote paths to local paths.
 All paths should be in absolute path."
   :group 'ppcompile)
@@ -88,7 +88,7 @@ All paths should be in absolute path."
 (defun ppcompile--convert-path (buffer finish-msg)
   "Convert paths matching SRC to DST in current `BUFFER'."
   (let ((path-mapping-list (with-current-buffer ppcompile--current-buffer
-                             ppcompile-path-mapping-list)))
+                             ppcompile-path-mapping-alist)))
     (with-current-buffer buffer
       (let ((inhibit-read-only t))
         (dolist (map path-mapping-list)
