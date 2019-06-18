@@ -34,6 +34,7 @@ machine localhost port 22 login try password 1
 
 Also pay attention to Emacs varaible =auth-sources= to include your setting.
 
+The project root is detected via =(project-current)= , if it fails =ppcompile= will take the top-level `git` directory as project root.
 * Final words
 
 This is my first time to roll out a package seriously, I believe there are much to improve.
