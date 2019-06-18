@@ -1,9 +1,10 @@
 ;;; ppcompile.el --- Ping-pong compile projects on remote machines -*- lexical-binding: t -*-
 
-;; Author: Guangwang Huang
+;; Author: Guangwang Huang <whatacold@gmail.com>
 ;; Maintainer: Guangwang Huang
+;; URL: https://github.com/whatacold/ppcompile
 ;; Version: 0.1
-;; Package-Requires: (compile, project, auth-source)
+;; Package-Requires: ((emacs "24"))
 ;; Homepage: homepage
 ;; Keywords: tools
 
@@ -26,7 +27,9 @@
 
 ;;; Commentary:
 
-;;
+;; This package tries to ease the workflow of development locally
+;; and compiling remotely, it depends on built-in packages: auth-source,
+;; project and compile, and external programs: rsync, ssh, expect.
 
 ;;; Code:
 
