@@ -18,7 +18,7 @@ Only tested with GNU Emacs 26.1 on Linux.
 You need to do some settings:
 - =ppcompile-ssh-host= :: the remote host
 - =ppcompile-ssh-port= :: the ssh port of remote host, defaults to 22
-- =ppcompile-ssh-user= :: user name
+- =ppcompile-ssh-user= :: user name, which defaults to current logged in user, as returned by =(user-login-name)=
 - =ppcompile-rsync-dst-dir= :: remote containing directory for the project
 - =ppcompile-remote-compile-command= :: compile command on remote host
 - =ppcompile-path-mapping-list= :: alist for path mapping
@@ -32,7 +32,7 @@ Besides that, you need to configure your password in some =auth-source= backends
 machine localhost port 22 login try password 1
 #+END_SRC
 
-Also pay attention to your Emacs varaible =auth-sources= to inlude your setting.
+Also pay attention to Emacs varaible =auth-sources= to include your setting.
 
 * Final words
 

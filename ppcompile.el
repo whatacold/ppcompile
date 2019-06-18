@@ -50,8 +50,8 @@
   "Port of remote machine."
   :group 'ppcompile)
 
-(defcustom ppcompile-ssh-user nil
   "User for remote compilations."
+(defcustom ppcompile-ssh-user (user-login-name)
   :group 'ppcompile)
 
 (defcustom ppcompile-rsync-exclude-list '("*.o"
