@@ -43,15 +43,17 @@
 
 (defcustom ppcompile-ssh-host nil
   "Host of the remote machine, where remote compilation runs."
-                                        ; TODO add :type
+  :type 'string
   :group 'ppcompile)
 
 (defcustom ppcompile-ssh-port 22
   "SSH port of the remote machine."
+  :type 'integer
   :group 'ppcompile)
 
 (defcustom ppcompile-ssh-user (user-login-name)
   "SSH user to login for remote compilations."
+  :type 'string
   :group 'ppcompile)
 
 (defcustom ppcompile-rsync-exclude-list '("*.o"
@@ -59,25 +61,31 @@
                                           ".svn*")
   "Files that `rsync' should exclude.
 See `--exclude' option of `rsync' for the syntax."
+  :type '(repeat string)
   :group 'ppcompile)
 
 (defcustom ppcompile-rsync-additional-args "-az"
-  "Arguments for `rsync', in addition to `ppcompile-rsync-exclude-list'."
+  "Arguments for `rsync', in addition to `ppcompile-rsync-exclude-list'.
+Do not contain spaces in the value."
+  :type 'string
   :group 'ppcompile)
 
 ;;; TODO use mapping to deduce it?
 (defcustom ppcompile-rsync-dst-dir nil
   "Destination directory to `rsync' files into."
+  :type 'string
   :group 'ppcompile)
 
 (defcustom ppcompile-remote-compile-command nil
   "Compile command to build the project on the remote machine."
+  :type 'string
   :group 'ppcompile)
 
 (defcustom ppcompile-path-mapping-alist nil
   "A list of cons'es tells how to map remote paths to local paths.
 Each cons cell's key is remote path, and value is local path, all paths
 should be in absolute path."
+  :type '(alist :key-type string :value-type string)
   :group 'ppcompile)
 
 (defconst ppcompile--with-password-script-path
