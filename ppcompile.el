@@ -96,6 +96,9 @@ should be in absolute path."
 (defvar ppcompile--current-buffer nil
   "Internal variable to keep current buffer, in order to fetch buffer-local variables.")
 
+(defvar ppcompile--debug nil
+  "If non-nil, log additional messages while using.")
+
 (defun ppcompile--replace-path (buffer _finish-msg)
   "Replace paths in BUFFER, according to `ppcompile-path-mapping-alist'.
 Argument _FINISH-MSG is a string describing how the process finished."
@@ -161,11 +164,17 @@ or else fallback to use `git' root directory containing `.git'."
                   ppcompile-ssh-host
                   ppcompile-rsync-dst-dir)
           rsync-args)
+    (setq rsync-args (nreverse rsync-args))
+
+    (when ppcompile--debug
+      (message "ppcompile ping command: expect %s rsync %s"
+               ppcompile--with-password-script-path
+               (mapconcat #'identity rsync-args " ")))
     (with-temp-buffer
       (setq rsync-status (apply #'call-process "expect" nil (current-buffer) nil
                                 ppcompile--with-password-script-path
                                 "rsync"
-                                (nreverse rsync-args)))
+                                rsync-args))
       (setq rsync-output (buffer-substring-no-properties (point-min) (point-max))))
     (cons rsync-status rsync-output)))
 
@@ -186,6 +195,8 @@ And replace remote paths with local ones in the output."
                                   ppcompile-ssh-user
                                   ppcompile-ssh-host
                                   ppcompile-remote-compile-command))
+    (when ppcompile--debug
+      (message "ppcompile pong command: %s" compile-command))
     (compilation-start compile-command)))
 
 ;;;###autoload
@@ -203,6 +214,15 @@ If DONT-PONG is not nil, it will only rsync the project."
         (message "Failed to rsync current project, error: %s" (cdr rsync-result))
       (unless dont-pong
         (ppcompile--pong)))))
+
+;;;###autoload
+(defun ppcompile-toggle-debug ()
+  "Toggle debugging."
+  (interactive)
+  (setq ppcompile--debug (not ppcompile--debug))
+  (message "ppcompile debug %s" (if ppcompile--debug
+                                    "on"
+                                  "off")))
 
 (provide 'ppcompile)
 

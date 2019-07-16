@@ -15,7 +15,7 @@ Only tested with GNU Emacs 26.1 on Linux.
 
 =M-x ppcompile= to rsync and compile the current project, sometimes you may just want to rsync files, then prefix the command, i.e. =M-u M-x ppcompile= .
 
-You need to do some settings:
+You need to have below settings, globally or per project:
 - =ppcompile-ssh-host= :: the remote host
 - =ppcompile-ssh-port= :: the ssh port of remote host, defaults to 22
 - =ppcompile-ssh-user= :: user name, which defaults to currently logged in user, as returned by =(user-login-name)=
@@ -26,6 +26,8 @@ You need to do some settings:
 
 You may consider putting these in =.dir-locals.el= if you have more than 1 remote hosts.
 There is an example of [[https://github.com/whatacold/ppcompile-test-project/blob/master/.dir-locals.el][.dir-locals.el]] example in the test project.
+
+Chances are that you may want to debug your settings, do it with =M-x ppcompile-toggle-debug=.
 
 Besides that, you need to configure your password in some =auth-source= backends, for example, =~/.authinfo= :
 #+BEGIN_SRC
