@@ -120,29 +120,11 @@ or else fallback to use `git' root directory containing `.git'."
                                                   (file-directory-p (expand-file-name ".git" dir))))
       default-directory))
 
-(defun ppcompile--get-ssh-password ()
-  "Get SSH password using auth-source."
-  (let ((secret
-         (plist-get
-          (nth 0
-               (auth-source-search :max 1
-                                   :host ppcompile-ssh-host
-                                   :user ppcompile-ssh-user
-                                   ;; secrets.el wouldn’t accept a number
-                                   :port (if (numberp ppcompile-ssh-port)
-                                             (number-to-string ppcompile-ssh-port)
-                                           ppcompile-ssh-port)
-                                   :require '(:secret)))
-          :secret)))
-    (if (functionp secret)
-        (funcall secret)
-      secret)))
-
 (defun ppcompile--ping ()
   "Rsync current project from local machine to remote one."
   (let* ((default-directory (ppcompile--project-root))
          (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
-                                            (ppcompile--get-ssh-password))
+                                            (ppcompile-get-ssh-password))
                                     process-environment))
          (rsync-args (mapcar (lambda (pattern) (format "--exclude=%s" pattern))
                              ppcompile-rsync-exclude-list))
@@ -183,7 +165,7 @@ or else fallback to use `git' root directory containing `.git'."
 And replace remote paths with local ones in the output."
   (let* ((default-directory (ppcompile--project-root))
          (compilation-environment (cons (format "PPCOMPILE_PASSWORD=%s"
-                                                (ppcompile--get-ssh-password))
+                                                (ppcompile-get-ssh-password))
                                         compilation-environment))
          compile-command)
     (save-some-buffers)
@@ -223,6 +205,28 @@ If DONT-PONG is not nil, it will only rsync the project."
   (message "ppcompile debug %s" (if ppcompile--debug
                                     "on"
                                   "off")))
+
+;;;###autoload
+(defun ppcompile-get-ssh-password ()
+  "Get SSH password using auth-source."
+  (interactive)
+  (let ((secret
+         (plist-get
+          (nth 0
+               (auth-source-search :max 1
+                                   :host ppcompile-ssh-host
+                                   :user ppcompile-ssh-user
+                                   ;; secrets.el wouldn’t accept a number
+                                   :port (if (numberp ppcompile-ssh-port)
+                                             (number-to-string ppcompile-ssh-port)
+                                           ppcompile-ssh-port)
+                                   :require '(:secret)))
+          :secret)))
+    (when (functionp secret)
+      (setq secret (funcall secret)))
+    (if (called-interactively-p)
+        (message "ppcompile password for current project: %s" secret)
+      secret)))
 
 (provide 'ppcompile)
 

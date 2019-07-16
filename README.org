@@ -13,6 +13,10 @@ Only tested with GNU Emacs 26.1 on Linux.
 
 * How to use
 
+- =M-x ppcompile= to ping-pong compile the current project
+- =M-x ppcompile-toggle-debug= to toggle debugging
+- =M-x ppcompile-get-ssh-password= to get the password of the current project, in order to debug problems
+
 =M-x ppcompile= to rsync and compile the current project, sometimes you may just want to rsync files, then prefix the command, i.e. =M-u M-x ppcompile= .
 
 You need to have below settings, globally or per project:
@@ -27,8 +31,6 @@ You need to have below settings, globally or per project:
 You may consider putting these in =.dir-locals.el= if you have more than 1 remote hosts.
 There is an example of [[https://github.com/whatacold/ppcompile-test-project/blob/master/.dir-locals.el][.dir-locals.el]] example in the test project.
 
-Chances are that you may want to debug your settings, do it with =M-x ppcompile-toggle-debug=.
-
 Besides that, you need to configure your password in some =auth-source= backends, for example, =~/.authinfo= :
 #+BEGIN_SRC
 machine localhost port 22 login try password 1
@@ -36,7 +38,9 @@ machine localhost port 22 login try password 1
 
 Also pay attention to Emacs variable =auth-sources= to include your setting.
 
-The project root is detected via =(project-current)= , if it fails =ppcompile= will take the top-level `git` directory as project root.
+The project root is detected via =(project-current)= , if it fails =ppcompile= will take the top-level =git= directory as project root.
+
+After these settings, chances are that it just can't work. Then you can debugging by =M-x ppcompile-toggle-debug=, and query the password by =M-x ppcompile-get-ssh-password=.
 * Final words
 
 This is my first time to roll out a package seriously, I believe there is much to improve,
