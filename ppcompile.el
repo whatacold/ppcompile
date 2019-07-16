@@ -200,7 +200,7 @@ If DONT-PONG is not nil, it will only rsync the project."
   (interactive "P")
   (let* ((rsync-result (ppcompile--ping)))
     (if (not (eq 0 (car rsync-result)))
-        (message "Failed to rsync current project to the remote machine")
+        (message "Failed to rsync current project, error: %s" (cdr rsync-result))
       (unless dont-pong
         (ppcompile--pong)))))
 
