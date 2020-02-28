@@ -4,22 +4,27 @@ It rsync's ("ping") current project to a remote machine, then compiles ("pong") 
 
 * Dependencies
 
-- built-in packages: compile, auth-source, project
-- rsync
-- ssh
-- expect
+- built-in packages: =compile=, =auth-source=, =project=
+- =rsync=
+- =ssh=
+- =expect=, for password authentication of SSH.
 
 Only tested with GNU Emacs 26.1 on Linux.
 
-* How to use
+* How to Use
 
 - =M-x ppcompile= to ping-pong compile the current project
+
+  It rsync'es the current project, and compiles it remotely and give back the output.
+
+  Sometimes you may just want to rsync files only, then prefix the command, i.e. =M-u M-x ppcompile= .
+
 - =M-x ppcompile-toggle-debug= to toggle debugging
-- =M-x ppcompile-get-ssh-password= to get the password of the current project, in order to debug problems
+- =M-x ppcompile-get-ssh-password= to get the password of the current project, if password authentication is used, this command is only intended for debugging.
 
-=M-x ppcompile= to rsync and compile the current project, sometimes you may just want to rsync files, then prefix the command, i.e. =M-u M-x ppcompile= .
+* Configuration for Projects
 
-You need to have below settings, globally or per project:
+Unfortunately, you need to have below settings for projects, globally or per project:
 - =ppcompile-ssh-host= :: the remote host
 - =ppcompile-ssh-port= :: the ssh port of remote host, defaults to 22
 - =ppcompile-ssh-user= :: user name, which defaults to currently logged in user, as returned by =(user-login-name)=
@@ -28,23 +33,24 @@ You need to have below settings, globally or per project:
 - =ppcompile-path-mapping-list= :: alist for path mapping
   =car= is a remote path and =cdr= a local path for each element, all paths should be absolute paths.
 
-You may consider putting these in =.dir-locals.el= if you have more than 1 remote hosts.
-There is an example of [[https://github.com/whatacold/ppcompile-test-project/blob/master/.dir-locals.el][.dir-locals.el]] example in the test project.
+You may consider putting these in =.dir-locals.el= if you have more than one remote hosts to "compile" different projects. Take a look at the example of [[https://github.com/whatacold/ppcompile-test-project/blob/master/.dir-locals.el][.dir-locals.el]] in the test project for how it looks like.
 
-Besides that, you need to configure your password in some =auth-source= backends, for example, =~/.authinfo= :
+Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= :
 #+BEGIN_SRC
 machine localhost port 22 login try password 1
 #+END_SRC
 
 Also pay attention to Emacs variable =auth-sources= to include your setting.
 
+That being said, public key authentication is recommended thought, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
+
 The project root is detected via =(project-current)= , if it fails =ppcompile= will take the top-level =git= directory as project root.
 
-After these settings, chances are that it just can't work. Then you can debugging by =M-x ppcompile-toggle-debug=, and query the password by =M-x ppcompile-get-ssh-password=.
+After these settings, chances are that it still doesn't work. You can turn on the debugging flag by =M-x ppcompile-toggle-debug= and run it once again to see what's going on, and you may also want to confirm that the password is right by =M-x ppcompile-get-ssh-password=  in the first place.
 * Final words
 
 This is my first time to roll out a package seriously, I believe there is much to improve,
-pull requests or issues are very welcome.
+so pull requests or issues are very welcome.
 
 Some TODOs:
 - [ ] Add tests
