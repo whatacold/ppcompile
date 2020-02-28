@@ -36,6 +36,7 @@
 (require 'compile)
 (require 'auth-source)
 (require 'project)
+(require 'files-x)
 
 (defgroup ppcompile nil
   "Run a ping pong compilation to build remotely and fix errors locally."
@@ -70,9 +71,8 @@ Do not contain spaces in the value."
   :type 'string
   :group 'ppcompile)
 
-;;; TODO use mapping to deduce it?
 (defcustom ppcompile-rsync-dst-dir nil
-  "Destination directory to `rsync' files into."
+  "The destination containing directory to `rsync' files into."
   :type 'string
   :group 'ppcompile)
 
@@ -105,11 +105,18 @@ Argument _FINISH-MSG is a string describing how the process finished."
   (let ((path-mapping-list (with-current-buffer ppcompile--current-buffer
                              ppcompile-path-mapping-alist)))
     (with-current-buffer buffer
-      (let ((inhibit-read-only t))
+      (let ((inhibit-read-only t) from to)
         (dolist (map path-mapping-list)
+          ; ensure both `from' & `to' ending with /
+          (setq from (car map))
+          (when (/= ?/ (aref from (1- (length from))))
+            (setq from (concat from "/")))
+          (setq to (cdr map))
+          (when (/= ?/ (aref to (1- (length to))))
+            (setq to (concat to "/")))
           (goto-char (point-min))
-          (while (search-forward (car map) nil t)
-            (replace-match (cdr map))))))))
+          (while (search-forward from nil t)
+            (replace-match to)))))))
 
 (defun ppcompile--project-root ()
   "Find the root directory of current project.
@@ -208,7 +215,9 @@ If DONT-PONG is not nil, it will only rsync the project."
 
 ;;;###autoload
 (defun ppcompile-get-ssh-password ()
-  "Get SSH password using auth-source."
+  "Get SSH password using auth-source.
+
+nil returned if no passowrd configured."
   (interactive)
   (let ((secret
          (plist-get
@@ -227,6 +236,47 @@ If DONT-PONG is not nil, it will only rsync the project."
     (if (called-interactively-p)
         (message "ppcompile password for current project: %s" secret)
       secret)))
+
+(defun ppcompile-config-project ()
+  "Guide you to configure variables in `.dir-locals.el' in the project root."
+  (interactive)
+  (save-excursion
+    (let ((default-directory (ppcompile--project-root))
+          host port user dst-dir compile-command modified-p)
+      (setq host (read-from-minibuffer "[ppcompile] ssh host: "))
+      (setq port (string-to-number (read-from-minibuffer "[ppcompile] ssh port: ")))
+      (setq user (read-from-minibuffer "[ppcompile] ssh user: "))
+      (setq dst-dir (read-from-minibuffer "[ppcompile] remote containing directory to rsync it: "))
+      (setq compile-command (read-from-minibuffer
+                             "[ppcompile] compile command (`M-n' to get started.): "
+                             nil nil nil nil
+                             (format "make -C %s" dst-dir)))
+      (when (> (length host) 0)
+        (setq modified-p t)
+        (add-dir-local-variable nil 'ppcompile-ssh-host host))
+      (when (> port 0)
+        (setq modified-p t)
+        (add-dir-local-variable nil 'ppcompile-ssh-port port))
+      (when (> (length user) 0)
+        (setq modified-p t)
+        (add-dir-local-variable nil 'ppcompile-ssh-user user))
+      (when (> (length dst-dir) 0)
+        (setq modified-p t)
+        (add-dir-local-variable nil 'ppcompile-rsync-dst-dir dst-dir)
+
+        ; FIXME may have duplicates
+        (push (cons dst-dir (expand-file-name (concat default-directory "/../")))
+              ppcompile-path-mapping-alist)
+        (add-dir-local-variable nil 'eval `(setq ppcompile-path-mapping-alist
+                                                 ',ppcompile-path-mapping-alist)))
+      (when (> (length compile-command) 0)
+        (setq modified-p t)
+        (add-dir-local-variable nil 'ppcompile-remote-compile-command compile-command))
+
+      (when modified-p
+        (when (y-or-n-p (format "Save %s.dir-locals.el? " default-directory))
+          (save-buffer))
+        (bury-buffer)))))
 
 (provide 'ppcompile)
 

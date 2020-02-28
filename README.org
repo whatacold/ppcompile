@@ -1,30 +1,38 @@
-This package tries to ease the workflow of local development, compilation on remote machines, and fixing errors locally with =next-error= .
+This package tries to ease the workflow that consists of local development, compiling on remote machines, and fixing errors locally with =next-error= .
 
-It rsync's ("ping") current project to a remote machine, then compiles ("pong") there and convert remote paths in the compilation output to local paths, so that =compilation-mode= can find files correctly.
+Basically it rsync's ("ping") current project to a remote machine, compiles it there, and convert remote paths in the compilation output to local paths ("pong"), so that =compilation-mode= can find the files containing errors or warnings correctly.
+
+The project root is detected via =(project-current)= , if it fails =ppcompile= will take the top-level =git= directory as project root.
 
 * Dependencies
 
-- built-in packages: =compile=, =auth-source=, =project=
+- built-in packages: =compile=, =auth-source=, =project=, and =files-x=
 - =rsync=
 - =ssh=
-- =expect=, for password authentication of SSH.
+- =expect=, for automatic password authentication of SSH.
 
 Only tested with GNU Emacs 26.1 on Linux.
 
 * How to Use
 
-- =M-x ppcompile= to ping-pong compile the current project
+- =M-x ppcompile-config-project= to configure various settings per project.
+- =M-x ppcompile= to ping-pong compile the current project.
 
-  It rsync'es the current project, and compiles it remotely and give back the output.
+  It rsync's the current project, and compiles it remotely and give back the output.
 
   Sometimes you may just want to rsync files only, then prefix the command, i.e. =M-u M-x ppcompile= .
 
-- =M-x ppcompile-toggle-debug= to toggle debugging
+- =M-x ppcompile-toggle-debug= to toggle debugging.
 - =M-x ppcompile-get-ssh-password= to get the password of the current project, if password authentication is used, this command is only intended for debugging.
 
 * Configuration for Projects
 
-Unfortunately, you need to have below settings for projects, globally or per project:
+Unfortunately, you need to have below settings, globally or per project.
+
+=M-x ppcompile-config-project= will guide you to set up in =.dir-locals.el= in the project root, if you have more than one remote hosts to "compile" different projects, which often is the case. You can fine-tune the =.dir-locals.el= file after finishing the command.
+
+The configurations include:
+
 - =ppcompile-ssh-host= :: the remote host
 - =ppcompile-ssh-port= :: the ssh port of remote host, defaults to 22
 - =ppcompile-ssh-user= :: user name, which defaults to currently logged in user, as returned by =(user-login-name)=
@@ -32,8 +40,6 @@ Unfortunately, you need to have below settings for projects, globally or per pro
 - =ppcompile-remote-compile-command= :: compile command on the remote host
 - =ppcompile-path-mapping-list= :: alist for path mapping
   =car= is a remote path and =cdr= a local path for each element, all paths should be absolute paths.
-
-You may consider putting these in =.dir-locals.el= if you have more than one remote hosts to "compile" different projects. Take a look at the example of [[https://github.com/whatacold/ppcompile-test-project/blob/master/.dir-locals.el][.dir-locals.el]] in the test project for how it looks like.
 
 Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= :
 #+BEGIN_SRC
@@ -43,8 +49,6 @@ machine localhost port 22 login try password 1
 Also pay attention to Emacs variable =auth-sources= to include your setting.
 
 That being said, public key authentication is recommended thought, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
-
-The project root is detected via =(project-current)= , if it fails =ppcompile= will take the top-level =git= directory as project root.
 
 After these settings, chances are that it still doesn't work. You can turn on the debugging flag by =M-x ppcompile-toggle-debug= and run it once again to see what's going on, and you may also want to confirm that the password is right by =M-x ppcompile-get-ssh-password=  in the first place.
 * Final words
