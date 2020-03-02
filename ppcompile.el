@@ -27,9 +27,10 @@
 
 ;;; Commentary:
 
-;; This package tries to ease the workflow of development locally
+;; This package tries to ease the workflow that consists of coding locally,
+;; compiling remotely, and fixing errors with `next-error' locally.
 ;; and compiling remotely, it depends on built-in packages: auth-source,
-;; project and compile, and external programs: rsync, ssh, expect.
+;; project , files-x and compile, and external programs: rsync, ssh, expect.
 
 ;;; Code:
 

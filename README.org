@@ -1,4 +1,4 @@
-This package tries to ease the workflow that consists of local development, compiling on remote machines, and fixing errors locally with =next-error= .
+This package tries to ease the workflow that consists of coding locally, compiling remotely, and fixing errors with =next-error= locally.
 
 Basically it rsync's ("ping") current project to a remote machine, compiles it there, and convert remote paths in the compilation output to local paths ("pong"), so that =compilation-mode= can find the files containing errors or warnings correctly.
 
