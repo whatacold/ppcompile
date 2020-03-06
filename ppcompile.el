@@ -90,7 +90,7 @@ should be in absolute path."
   :group 'ppcompile)
 
 (defconst ppcompile--with-password-script-path
-  (concat (file-name-directory (buffer-file-name))
+  (concat (file-name-directory (or load-file-name buffer-file-name))
           "with-password.exp")
   "The path of the helper expect script `with-password.exp'.")
 
@@ -215,11 +215,11 @@ If DONT-PONG is not nil, it will only rsync the project."
                                   "off")))
 
 ;;;###autoload
-(defun ppcompile-get-ssh-password ()
-  "Get SSH password using auth-source.
+(defun ppcompile-get-ssh-password (&optional interactive-p)
+  "Get SSH password using auth-source if `INTERACTIVE-P' is non nil.
 
-nil returned if no passowrd configured."
-  (interactive)
+nil returned if no password configured."
+  (interactive "p")
   (let ((secret
          (plist-get
           (nth 0
@@ -234,8 +234,8 @@ nil returned if no passowrd configured."
           :secret)))
     (when (functionp secret)
       (setq secret (funcall secret)))
-    (if (called-interactively-p)
-        (message "ppcompile password for current project: %s" secret)
+    (if interactive-p
+        (message "ppcompile password for the current project: %s" secret)
       secret)))
 
 (defun ppcompile-config-project ()
