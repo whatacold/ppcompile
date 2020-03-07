@@ -1,37 +1,38 @@
-This package tries to ease the workflow that consists of coding locally, compiling remotely, and fixing errors with =next-error= locally.
+This Emacs package tries to ease the development workflow that consists of coding locally, compiling remotely, and fixing errors with =next-error= locally, which is the typical development cycle for C/C++ projects.
 
-Basically it rsync's ("ping") current project to a remote machine, compiles it there, and convert remote paths in the compilation output to local paths ("pong"), so that =compilation-mode= can find the files containing errors or warnings correctly.
+It =rsync='s ("ping") current project to a remote machine, compiles it there, and convert remote paths in the =*compilation*= output to local paths ("pong") according to a configured mapping alist, so that =compilation-mode= can find the files containing errors or warnings correctly while executing =M-x next-error= and =M-x previous-error=.
 
 The project root is detected via =(project-current)= , if it fails =ppcompile= will take the top-level =git= directory as project root.
+
+Currently, it's only tested with GNU Emacs 26.3 on Linux.
 
 * Dependencies
 
 - built-in packages: =compile=, =auth-source=, =project=, and =files-x=
-- =rsync=
-- =ssh=
-- =expect=, for automatic password authentication of SSH.
+- external programs: =rsync=, =ssh=, =expect=.
 
-Only tested with GNU Emacs 26.1 on Linux.
+  Make sure you have these on your system, and =expect= is only needed if you're using password authentication for ssh.
 
 * How to Use
 
-- =M-x ppcompile-config-project= to configure various settings per project.
+- =M-x ppcompile-config-project= to configure various settings for a project.
+
+  This command's detail can be found on section [[*Configurations][Configurations]]
 - =M-x ppcompile= to ping-pong compile the current project.
 
-  It rsync's the current project, and compiles it remotely and give back the output.
+  It rsync's the current project, compiles it remotely, takes back the output and post-process it, so that =compilation-mode= works perfectly.
 
   Sometimes you may just want to rsync files only, then prefix the command, i.e. =M-u M-x ppcompile= .
-
 - =M-x ppcompile-toggle-debug= to toggle debugging.
-- =M-x ppcompile-get-ssh-password= to get the password of the current project, if password authentication is used, this command is only intended for debugging.
+- =M-x ppcompile-get-ssh-password= to get the password of the current project, if password authentication is used, this command is intended for debugging.
 
-* Configuration for Projects
+* Configurations
 
-Unfortunately, you need to have below settings, globally or per project.
+There are quite some configuration to set, globally or per project.
 
-=M-x ppcompile-config-project= will guide you to set up in =.dir-locals.el= in the project root, if you have more than one remote hosts to "compile" different projects, which often is the case. You can fine-tune the =.dir-locals.el= file after finishing the command.
+=M-x ppcompile-config-project= will guide you to set them up in =.dir-locals.el= in the project root, if you have more than one remote hosts to "compile" different projects, which often is the case. You can then fine-tune the =.dir-locals.el= file after finishing the command.
 
-The configurations include:
+The configurations covered by that command include:
 
 - =ppcompile-ssh-host= :: the remote host
 - =ppcompile-ssh-port= :: the ssh port of remote host, defaults to 22
@@ -39,9 +40,15 @@ The configurations include:
 - =ppcompile-rsync-dst-dir= :: remote containing directory for the project
 - =ppcompile-remote-compile-command= :: compile command on the remote host
 - =ppcompile-path-mapping-list= :: alist for path mapping
-  =car= is a remote path and =cdr= a local path for each element, all paths should be absolute paths.
 
-Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= :
+  The =car= of each whose element is a remote path, and the =cdr= a local path, all paths should be absolute paths.
+
+The above configuration often may vary from projects to projects, they are often set per project. There are also other global configurations, which all have defaults:
+- =ppcompile-ssh-additional-args= :: additional arguments for the =ssh= command line
+- =ppcompile-rsync-additional-args= :: additional arguments for the =rsync= command line
+- =ppcompile-rsync-exclude-list= :: a list specifying files you want to exclude, such as binary files.
+
+Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= looks like:
 #+BEGIN_SRC
 machine localhost port 22 login try password 1
 #+END_SRC
@@ -50,7 +57,19 @@ Also pay attention to Emacs variable =auth-sources= to include your setting.
 
 That being said, public key authentication is recommended thought, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
 
-After these settings, chances are that it still doesn't work. You can turn on the debugging flag by =M-x ppcompile-toggle-debug= and run it once again to see what's going on, and you may also want to confirm that the password is right by =M-x ppcompile-get-ssh-password=  in the first place.
+* Troubleshooting
+
+After above settings, chances are that it still doesn't work. You can shoot it following these step:
+
+1. Turn on the debugging flag by =M-x ppcompile-toggle-debug=
+
+   Re-run it once again, and check out the shell commands in the =*Message*= buffer, and if there is setting wrong. Run the command on a terminal manually, to see if there is more error info.
+
+2. Confirm that the password is right by =M-x ppcompile-get-ssh-password= if you're using password authentication for ssh.
+
+   Setting =auth-source= can be tricky, so this may help.
+
+Note that these commands should be executed on the buffers of project files, to take advantage of the configurations for that particular project.
 
 * Misc
 
@@ -63,12 +82,5 @@ After these settings, chances are that it still doesn't work. You can turn on th
 
 * Final words
 
-This is my first time to roll out a package seriously, I believe there is much to improve,
-so pull requests or issues are very welcome.
-
-Some TODOs:
-- [X] Add tests
-- [X] Try to remove the dependency on =expect=
-
-  It's not required if public key authentication is used.
-- [ ] Improve README and code
+This was my first time to roll out a package seriously, I believe there is much to improve,
+so pull requests and issues are very welcome.
