@@ -168,7 +168,8 @@ or else fallback to use `git' root directory containing `.git'."
     (when ppcompile--debug
       (message "ppcompile ping command: expect %s rsync %s"
                ppcompile--with-password-script-path
-               (mapconcat #'identity rsync-args " ")))
+               (mapconcat #'(lambda (arg) (format "'%s'" arg))
+                          rsync-args " ")))
     (with-temp-buffer
       (setq rsync-status (apply #'call-process "expect" nil (current-buffer) nil
                                 ppcompile--with-password-script-path
@@ -264,7 +265,7 @@ nil returned if no password configured."
       (setq user (read-from-minibuffer "[ppcompile] ssh user: "))
       (setq dst-dir (read-from-minibuffer "[ppcompile] remote containing directory to rsync it: "))
       (setq compile-command (read-from-minibuffer
-                             "[ppcompile] compile command (`M-n' to get started.): "
+                             "[ppcompile] compile command (`M-n' to get started): "
                              nil nil nil nil
                              (format "make -C %s" dst-dir)))
       (when (> (length host) 0)
