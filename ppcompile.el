@@ -106,7 +106,8 @@ Argument _FINISH-MSG is a string describing how the process finished."
   (let ((path-mapping-list (with-current-buffer ppcompile--current-buffer
                              ppcompile-path-mapping-alist)))
     (with-current-buffer buffer
-      (let ((inhibit-read-only t) from to)
+      (let ((inhibit-read-only t)
+            from to)
         (dolist (map path-mapping-list)
           ; ensure both `from' & `to' ending with /
           (setq from (car map))
@@ -238,6 +239,7 @@ nil returned if no password configured."
         (message "ppcompile password for the current project: %s" secret)
       secret)))
 
+;;;###autoload
 (defun ppcompile-config-project ()
   "Guide you to configure variables in `.dir-locals.el' in the project root."
   (interactive)

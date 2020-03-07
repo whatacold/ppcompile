@@ -35,3 +35,31 @@
     (should
      (string= "foo:BAR123!" (ppcompile-get-ssh-password)))))
 
+(ert-deftest test-replace-path ()
+  (let ((content (concat "/home/foo/Lorem ipsum dolor"
+                         "/home/foo sit amet, consectetur adipiscing elit."
+                         " /home/bar/Pellentesque sem mauris")))
+    (with-temp-buffer
+      (insert content)
+      (let ((ppcompile--current-buffer (current-buffer)))
+        (setq ppcompile-path-mapping-alist '(("/home/foo" . "/home/barr")
+                                             ("/home/bar/" . "/home/baz")))
+        (ppcompile--replace-path (current-buffer) "finish-msg"))
+      (should
+       (string= (concat "/home/barr/Lorem ipsum dolor"
+                        "/home/foo sit amet, consectetur adipiscing elit."
+                        " /home/baz/Pellentesque sem mauris")
+                (buffer-string)))
+
+      (erase-buffer)
+      (insert content)
+      (let ((ppcompile--current-buffer (current-buffer)))
+        ;; replaced in 2 rounds
+        (setq ppcompile-path-mapping-alist '(("/home/foo" . "/home/bar")
+                                             ("/home/bar/" . "/home/baz")))
+        (ppcompile--replace-path (current-buffer) "finish-msg"))
+      (should
+       (string= (concat "/home/baz/Lorem ipsum dolor"
+                        "/home/foo sit amet, consectetur adipiscing elit."
+                        " /home/baz/Pellentesque sem mauris")
+                (buffer-string))))))
