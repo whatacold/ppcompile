@@ -54,9 +54,12 @@ After these settings, chances are that it still doesn't work. You can turn on th
 
 * Misc
 
-- Run `make test` to test the code
+- Run =make test= to test the code
 
-  And `make test-with-sshd` to test the functionality with a sshd server, which requires some additional setup.
+  And =make test-with-sshd= to test the functionality with a sshd server, which requires some additional setup.
+
+- =make checkdoc= checks the docstrings.
+- =make compile= compiles the elisp files.
 
 * Final words
 
@@ -64,6 +67,8 @@ This is my first time to roll out a package seriously, I believe there is much t
 so pull requests or issues are very welcome.
 
 Some TODOs:
-- [ ] Add tests
+- [X] Add tests
+- [X] Try to remove the dependency on =expect=
+
+  It's not required if public key authentication is used.
 - [ ] Improve README and code
-- [ ] Try to remove the dependency on =expect=
