@@ -244,8 +244,12 @@ nil returned if no password configured."
           :secret)))
     (when (functionp secret)
       (setq secret (funcall secret)))
+    (when (not (stringp secret))
+      (setq secret ""))
+    (when (and ppcompile--debug (= 0 (length secret)))
+      (message "No ppcompile password for the current project!"))
     (if interactive-p
-        (message "ppcompile password for the current project: %s" secret)
+        (message "ppcompile password for the current project: '%s'" secret)
       secret)))
 
 ;;;###autoload
