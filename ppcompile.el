@@ -58,6 +58,11 @@
   :type 'string
   :group 'ppcompile)
 
+(defcustom ppcompile-ssh-additional-args ""
+  "Additional arguments for `ssh'."
+  :type 'string
+  :group 'ppcompile)
+
 (defcustom ppcompile-rsync-exclude-list '("*.o"
                                           ".git*"
                                           ".svn*")
@@ -140,7 +145,10 @@ or else fallback to use `git' root directory containing `.git'."
          (project-path (expand-file-name default-directory))
          (rsync-status 1)
          rsync-output)
-    (push (format "--rsh=ssh -p %d" ppcompile-ssh-port) rsync-args)
+    (push (format "--rsh=ssh -p %d %s"
+                  ppcompile-ssh-port
+                  ppcompile-ssh-additional-args)
+          rsync-args)
     (when ppcompile-rsync-additional-args
       (push ppcompile-rsync-additional-args rsync-args))
 
@@ -180,9 +188,10 @@ And replace remote paths with local ones in the output."
     (save-some-buffers)
     (setq ppcompile--current-buffer (current-buffer))
     (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to achieve this in an elegant way?
-    (setq compile-command (format "expect %s ssh -p %d %s@%s %s"
+    (setq compile-command (format "expect %s ssh -p %d %s %s@%s %s"
                                   ppcompile--with-password-script-path
                                   ppcompile-ssh-port
+                                  ppcompile-ssh-additional-args
                                   ppcompile-ssh-user
                                   ppcompile-ssh-host
                                   ppcompile-remote-compile-command))

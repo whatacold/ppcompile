@@ -63,3 +63,28 @@
                         "/home/foo sit amet, consectetur adipiscing elit."
                         " /home/baz/Pellentesque sem mauris")
                 (buffer-string))))))
+
+(ert-deftest test-with-sshd ()
+  "Test the ping-pong compile function with a ad-hoc sshd server,
+which listens at localhost:22000 via `/usr/sbin/sshd -p 22000'.
+
+This test should be run manually due to extra work to start up sshd.
+
+Identity files should be generated and copied to the server at first:
+ssh-keygen -t rsa -b 4096 -f ./test/id_ppcompile_test
+ssh-copy-id -p 22000 -i ./test/id_ppcompile_test localhost
+"
+  :tags '(sshd)
+  (delete-directory "/tmp/hello-world-project/" 'recursive)
+
+  (let ((enable-local-variables :all)
+        (project-find-functions (lambda (dir) (cons 'test dir))))
+    (find-file "./test/hello-world-project/hello-world.c")
+    (ppcompile)
+    (sleep-for 2) ; wait for finishing compiling, kinda silly
+    (kill-buffer "hello-world.c")
+    (switch-to-buffer "*compilation*")
+    (next-error)
+    (switch-to-buffer "hello-world.c") ; the source file should be targeted now!
+    (should
+     (= 6 (line-number-at-pos)))))

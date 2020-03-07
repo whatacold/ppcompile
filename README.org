@@ -51,6 +51,13 @@ Also pay attention to Emacs variable =auth-sources= to include your setting.
 That being said, public key authentication is recommended thought, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
 
 After these settings, chances are that it still doesn't work. You can turn on the debugging flag by =M-x ppcompile-toggle-debug= and run it once again to see what's going on, and you may also want to confirm that the password is right by =M-x ppcompile-get-ssh-password=  in the first place.
+
+* Misc
+
+- Run `make test` to test the code
+
+  And `make test-with-sshd` to test the functionality with a sshd server, which requires some additional setup.
+
 * Final words
 
 This is my first time to roll out a package seriously, I believe there is much to improve,
