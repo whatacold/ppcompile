@@ -267,7 +267,11 @@ nil returned if no password configured."
       (setq compile-command (read-from-minibuffer
                              "[ppcompile] compile command (`M-n' to get started): "
                              nil nil nil nil
-                             (format "make -C %s" dst-dir)))
+                             (format "make -C %s/%s"
+                                     dst-dir
+                                     (file-name-nondirectory
+                                      (directory-file-name
+                                       (ppcompile--project-root))))))
       (when (> (length host) 0)
         (setq modified-p t)
         (add-dir-local-variable nil 'ppcompile-ssh-host host))
