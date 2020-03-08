@@ -1,8 +1,8 @@
 EMACS ?= emacs
 
-.PHONY: compile test checkdoc clean
+.PHONY: compile checkdoc clean test test-with-sshd
 
-all: compile test checkdoc
+all: compile checkdoc test
 
 compile:
 	$(EMACS) -Q -batch --eval '(mapc #'"'"'byte-compile-file '"'"'("ppcompile.el"))'

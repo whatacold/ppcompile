@@ -71,6 +71,11 @@ After above settings, chances are that it still doesn't work. You can shoot it f
 
 Note that these commands should be executed on the buffers of project files, to take advantage of the configurations for that particular project.
 
+* Other Solutions
+
+- [[https://github.com/libfuse/sshfs][sshfs]] mounts the remote FS locally, which should be considered if you have a stable network.
+- [[https://github.com/buildfoundation/mainframer][mainframer]], a tool for remote builds, although not based on Emacs, is a more general solution with similar idea.
+
 * Misc
 
 - Run =make test= to test the code
