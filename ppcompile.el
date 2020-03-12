@@ -267,7 +267,7 @@ nil returned if no password configured."
       (setq compile-command (read-from-minibuffer
                              "[ppcompile] compile command (`M-n' to get started): "
                              nil nil nil nil
-                             (format "make -C %s/%s"
+                             (format "make -k -C %s/%s"
                                      dst-dir
                                      (file-name-nondirectory
                                       (directory-file-name
