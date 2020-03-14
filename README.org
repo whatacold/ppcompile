@@ -73,14 +73,21 @@ Note that these commands should be executed on the buffers of project files, to 
 
 * Other Solutions
 
-- [[https://github.com/libfuse/sshfs][sshfs]] mounts the remote FS locally, which should be considered if you have a stable network.
+- [[https://github.com/libfuse/sshfs][sshfs]] mounts the remote FS locally, which would be an option if you have a stable, fast network and want to edit remote files just like locally.
+
+  Note that you still need to compile it on the remote host, though you can edit it within your local environment.
+
 - [[https://github.com/buildfoundation/mainframer][mainframer]], a tool for remote builds, although not based on Emacs, is a more general solution with similar idea.
 
 * Misc
 
 - Run =make test= to test the code
 
-  And =make test-with-sshd= to test the functionality with a sshd server, which requires some additional setup.
+  And =make test-with-sshd= to test the functionality with a sshd server, which requires some additional setup:
+  1. Start a ssh server at port 22000: =/usr/sbin/sshd -p 22000=
+
+  2. Copy the public key file: =ssh-copy-id -p 22000 -i ./test/id_ppcompile_test localhost=
+     This will append the public key file to =~/.ssh/authorized_keys=, so *don't do this on your publicly available server*, because it will be open to anyone who uses the private key in the =test/= directory to ssh into your server, and do something evil.
 
 - =make checkdoc= checks the docstrings.
 - =make compile= compiles the elisp files.
