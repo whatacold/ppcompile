@@ -76,10 +76,12 @@ ssh-copy-id -p 22000 -i ./test/id_ppcompile_test localhost
 "
   :tags '(sshd)
   (delete-directory "/tmp/hello-world-project/" 'recursive)
+  (set-file-modes "./test/id_ppcompile_test" #o600) ; As `ssh' requested
 
   (let ((enable-local-variables :all)
         (project-find-functions (lambda (dir) (cons 'test dir))))
     (find-file "./test/hello-world-project/hello-world.c")
+    ; (ppcompile-toggle-debug)
     (ppcompile)
     (sleep-for 2) ; wait for finishing compiling, kinda silly
     (kill-buffer "hello-world.c")
