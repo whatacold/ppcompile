@@ -43,6 +43,27 @@
   "Run a ping pong compilation to build remotely and fix errors locally."
   :group 'tools)
 
+(defcustom ppcompile-ssh-executable (if (eq system-type 'windows-nt)
+                                        "ssh.exe"
+                                      "ssh")
+  "The ssh executable."
+  :type 'string
+  :group 'ppcompile)
+
+(defcustom ppcompile-rsync-executable (if (eq system-type 'windows-nt)
+                                        "rsync.exe"
+                                      "rsync")
+  "The rsync executable."
+  :type 'string
+  :group 'ppcompile)
+
+(defcustom ppcompile-expect-executable (if (eq system-type 'windows-nt)
+                                        "expect.exe"
+                                      "expect")
+  "The expect executable."
+  :type 'string
+  :group 'ppcompile)
+
 (defcustom ppcompile-ssh-host nil
   "Host of the remote machine, where remote compilation runs."
   :type 'string
@@ -145,7 +166,8 @@ or else fallback to use `git' root directory containing `.git'."
          (project-path (expand-file-name default-directory))
          (rsync-status 1)
          rsync-output)
-    (push (format "--rsh=ssh -p %d %s"
+    (push (format "--rsh=%s -p %d %s"
+                  ppcompile-ssh-executable
                   ppcompile-ssh-port
                   ppcompile-ssh-additional-args)
           rsync-args)
@@ -166,14 +188,19 @@ or else fallback to use `git' root directory containing `.git'."
     (setq rsync-args (nreverse rsync-args))
 
     (when ppcompile--debug
-      (message "ppcompile ping command: expect %s rsync %s"
+      (message "ppcompile ping command: expect %s %s %s"
                ppcompile--with-password-script-path
+               ppcompile-rsync-executable
                (mapconcat #'(lambda (arg) (format "'%s'" arg))
                           rsync-args " ")))
     (with-temp-buffer
-      (setq rsync-status (apply #'call-process "expect" nil (current-buffer) nil
+      (setq rsync-status (apply #'call-process
+                                ppcompile-expect-executable
+                                nil
+                                (current-buffer)
+                                nil
                                 ppcompile--with-password-script-path
-                                "rsync"
+                                ppcompile-rsync-executable
                                 rsync-args))
       (setq rsync-output (buffer-substring-no-properties (point-min) (point-max))))
     (cons rsync-status rsync-output)))
@@ -189,8 +216,10 @@ And replace remote paths with local ones in the output."
     (save-some-buffers)
     (setq ppcompile--current-buffer (current-buffer))
     (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to achieve this in an elegant way?
-    (setq compile-command (format "expect %s ssh -p %d %s %s@%s %s"
+    (setq compile-command (format "%s %s %s -p %d %s %s@%s %s"
+                                  ppcompile-expect-executable
                                   ppcompile--with-password-script-path
+                                  ppcompile-ssh-executable
                                   ppcompile-ssh-port
                                   ppcompile-ssh-additional-args
                                   ppcompile-ssh-user
