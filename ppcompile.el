@@ -105,6 +105,9 @@ should be in absolute path."
 (defvar ppcompile--debug nil
   "If non-nil, log additional messages while using.")
 
+(defvar ppcompile--history nil
+  "History list of user input.")
+
 (defun ppcompile--replace-path (buffer _finish-msg)
   "Replace paths in BUFFER, according to `ppcompile-path-mapping-alist'.
 Argument _FINISH-MSG is a string describing how the process finished."
@@ -114,7 +117,7 @@ Argument _FINISH-MSG is a string describing how the process finished."
       (let ((inhibit-read-only t)
             from to)
         (dolist (map path-mapping-list)
-          ; ensure both `from' & `to' ending with /
+          ;; ensure both `from' & `to' ending with /
           (setq from (car map))
           (when (/= ?/ (aref from (1- (length from))))
             (setq from (concat from "/")))
@@ -260,18 +263,36 @@ nil returned if no password configured."
   (save-excursion
     (let ((default-directory (ppcompile--project-root))
           host port user dst-dir compile-command modified-p)
-      (setq host (read-from-minibuffer "[ppcompile] ssh host: "))
-      (setq port (string-to-number (read-from-minibuffer "[ppcompile] ssh port: ")))
-      (setq user (read-from-minibuffer "[ppcompile] ssh user: "))
-      (setq dst-dir (read-from-minibuffer "[ppcompile] remote containing directory to rsync it: "))
-      (setq compile-command (read-from-minibuffer
-                             "[ppcompile] compile command (`M-n' to get started): "
-                             nil nil nil nil
-                             (format "make -k -C %s/%s"
-                                     dst-dir
-                                     (file-name-nondirectory
-                                      (directory-file-name
-                                       (ppcompile--project-root))))))
+      (setq host (read-from-minibuffer "[ppcompile] ssh host: "
+                                       nil
+                                       nil
+                                       nil
+                                       'ppcompile--history))
+      (setq port (string-to-number (read-from-minibuffer "[ppcompile] ssh port: "
+                                                         nil
+                                                         nil
+                                                         nil
+                                                         'ppcompile--history)))
+      (setq user (read-from-minibuffer "[ppcompile] ssh user: "
+                                       nil
+                                       nil
+                                       nil
+                                       'ppcompile--history))
+      (setq dst-dir (read-from-minibuffer "[ppcompile] remote containing directory to rsync it: "
+                                          nil
+                                          nil
+                                          nil
+                                          'ppcompile--history))
+      (setq compile-command (read-from-minibuffer "[ppcompile] compile command (`M-n' to get started): "
+                                                  nil
+                                                  nil
+                                                  nil
+                                                  'ppcompile--history
+                                                  (format "make -k -C %s/%s"
+                                                          dst-dir
+                                                          (file-name-nondirectory
+                                                           (directory-file-name
+                                                            (ppcompile--project-root))))))
       (when (> (length host) 0)
         (setq modified-p t)
         (add-dir-local-variable nil 'ppcompile-ssh-host host))
@@ -285,7 +306,7 @@ nil returned if no password configured."
         (setq modified-p t)
         (add-dir-local-variable nil 'ppcompile-rsync-dst-dir dst-dir)
 
-        ; FIXME may have duplicates
+        ;; FIXME may have duplicates
         (push (cons dst-dir (expand-file-name (concat default-directory "/../")))
               ppcompile-path-mapping-alist)
         (add-dir-local-variable nil 'eval `(setq ppcompile-path-mapping-alist
