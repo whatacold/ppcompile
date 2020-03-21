@@ -11,7 +11,7 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 - built-in packages: =compile=, =auth-source=, =project=, and =files-x=
 - external programs: =rsync=, =ssh=, =expect=.
 
-  Make sure you have these on your system, and =expect= is only needed if you're using password authentication for ssh.
+  Make sure you have these on your system.
 
 * How to Use
 
