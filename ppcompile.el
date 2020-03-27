@@ -348,8 +348,8 @@ nil returned if no password configured."
 
       (when modified-p
         (when (y-or-n-p (format "Save %s.dir-locals.el? " default-directory))
-          (save-buffer))
-        (bury-buffer)))))
+          (save-buffer)
+          (bury-buffer))))))
 
 (provide 'ppcompile)
 
