@@ -43,10 +43,13 @@ The configurations covered by that command include:
 
   The =car= of each whose element is a remote path, and the =cdr= a local path, all paths should be absolute paths.
 
-The above configuration often may vary from projects to projects, they are often set per project. There are also other global configurations, which all have defaults:
+The above configuration often may vary from projects to projects, they are often set per project. There are also other global configurations, which have defaults:
 - =ppcompile-ssh-additional-args= :: additional arguments for the =ssh= command line
 - =ppcompile-rsync-additional-args= :: additional arguments for the =rsync= command line
 - =ppcompile-rsync-exclude-list= :: a list specifying files you want to exclude, such as binary files.
+- =ppcompile-ssh-executable= :: The =ssh= executable
+- =ppcompile-rsync-executable= :: The =rsync= executable
+- =ppcompile-expect-executable= :: The =expect= executable
 
 Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= looks like:
 #+BEGIN_SRC
