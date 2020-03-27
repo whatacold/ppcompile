@@ -64,6 +64,13 @@
   :type 'string
   :group 'ppcompile)
 
+(defcustom ppcompile-with-password-path
+  (concat (file-name-directory (or load-file-name buffer-file-name))
+          "with-password.exp")
+  "The path of the helper expect script `with-password.exp'."
+  :type 'string
+  :group 'ppcompile)
+
 (defcustom ppcompile-ssh-host nil
   "Host of the remote machine, where remote compilation runs."
   :type 'string
@@ -114,11 +121,6 @@ Each cons cell's key is remote path, and value is local path, all paths
 should be in absolute path."
   :type '(alist :key-type string :value-type string)
   :group 'ppcompile)
-
-(defconst ppcompile--with-password-script-path
-  (concat (file-name-directory (or load-file-name buffer-file-name))
-          "with-password.exp")
-  "The path of the helper expect script `with-password.exp'.")
 
 (defvar ppcompile--current-buffer nil
   "Internal variable to keep current buffer, in order to fetch buffer-local variables.")
@@ -192,7 +194,7 @@ or else fallback to use `git' root directory containing `.git'."
 
     (when ppcompile--debug
       (message "ppcompile ping command: expect %s %s %s"
-               ppcompile--with-password-script-path
+               ppcompile-with-password-path
                ppcompile-rsync-executable
                (mapconcat #'(lambda (arg) (format "'%s'" arg))
                           rsync-args " ")))
@@ -202,7 +204,7 @@ or else fallback to use `git' root directory containing `.git'."
                                 nil
                                 (current-buffer)
                                 nil
-                                ppcompile--with-password-script-path
+                                ppcompile-with-password-path
                                 ppcompile-rsync-executable
                                 rsync-args))
       (setq rsync-output (buffer-substring-no-properties (point-min) (point-max))))
@@ -221,7 +223,7 @@ And replace remote paths with local ones in the output."
     (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to achieve this in an elegant way?
     (setq compile-command (format "%s %s %s -p %d %s %s@%s %s"
                                   ppcompile-expect-executable
-                                  ppcompile--with-password-script-path
+                                  ppcompile-with-password-path
                                   ppcompile-ssh-executable
                                   ppcompile-ssh-port
                                   ppcompile-ssh-additional-args

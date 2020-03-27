@@ -50,6 +50,9 @@ The above configuration often may vary from projects to projects, they are often
 - =ppcompile-ssh-executable= :: The =ssh= executable
 - =ppcompile-rsync-executable= :: The =rsync= executable
 - =ppcompile-expect-executable= :: The =expect= executable
+- =ppcompile-with-password-path= :: The path of the helper expect script =with-password.exp=.
+
+  The default value may be wrong if your =.elc= file isn't in the same directory of the =with-password.exp=.
 
 Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= looks like:
 #+BEGIN_SRC
