@@ -11,7 +11,7 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 - built-in packages: =compile=, =auth-source=, =project=, and =files-x=
 - external programs: =rsync=, =ssh=, =expect=.
 
-  Make sure you have these on your system.
+  Make sure you have these on your system. If =expect= isn't available, then only SSH public key authentication works.
 
 * How to Use
 
@@ -52,7 +52,7 @@ The above configuration often may vary from projects to projects, they are often
 - =ppcompile-expect-executable= :: The =expect= executable
 - =ppcompile-with-password-path= :: The path of the helper expect script =with-password.exp=.
 
-  The default value may be wrong if your =.elc= file isn't in the same directory of the =with-password.exp=.
+  The default value may be wrong if your =.elc= file isn't in the same directory of the =with-password.exp=. If this file path doesn't exists, then only SSH public key authentication works.
 
 Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= looks like:
 #+BEGIN_SRC

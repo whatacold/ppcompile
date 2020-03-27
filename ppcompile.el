@@ -51,15 +51,15 @@
   :group 'ppcompile)
 
 (defcustom ppcompile-rsync-executable (if (eq system-type 'windows-nt)
-                                        "rsync.exe"
-                                      "rsync")
+                                          "rsync.exe"
+                                        "rsync")
   "The rsync executable."
   :type 'string
   :group 'ppcompile)
 
 (defcustom ppcompile-expect-executable (if (eq system-type 'windows-nt)
-                                        "expect.exe"
-                                      "expect")
+                                           "expect.exe"
+                                         "expect")
   "The expect executable."
   :type 'string
   :group 'ppcompile)
@@ -131,6 +131,12 @@ should be in absolute path."
 (defvar ppcompile--history nil
   "History list of user input.")
 
+(defun ppcompile--expect-available-p ()
+  "Predicate whether `expect' and the helper script are both available."
+  (and (file-exists-p ppcompile-with-password-path)
+       (file-executable-p (or (executable-find ppcompile-expect-executable)
+                              ppcompile-expect-executable))))
+
 (defun ppcompile--replace-path (buffer _finish-msg)
   "Replace paths in BUFFER, according to `ppcompile-path-mapping-alist'.
 Argument _FINISH-MSG is a string describing how the process finished."
@@ -163,73 +169,100 @@ or else fallback to use `git' root directory containing `.git'."
 (defun ppcompile--ping ()
   "Rsync current project from local machine to remote one."
   (let* ((default-directory (ppcompile--project-root))
-         (process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
-                                            (ppcompile-get-ssh-password))
-                                    process-environment))
-         (rsync-args (mapcar (lambda (pattern) (format "--exclude=%s" pattern))
-                             ppcompile-rsync-exclude-list))
          (project-path (expand-file-name default-directory))
+         (expect-available-p (ppcompile--expect-available-p))
+         (process-environment process-environment)
          (rsync-status 1)
-         rsync-output)
+         (ping-args (mapcar #'(lambda (pattern) (format "--exclude=%s" pattern))
+                            ppcompile-rsync-exclude-list))
+         ping-output)
     (push (format "--rsh=%s -p %d %s"
                   ppcompile-ssh-executable
                   ppcompile-ssh-port
                   ppcompile-ssh-additional-args)
-          rsync-args)
+          ping-args)
     (when ppcompile-rsync-additional-args
-      (push ppcompile-rsync-additional-args rsync-args))
+      (push ppcompile-rsync-additional-args ping-args))
 
-    ;; trailing slash makes a difference for rsync, trim it if any.
-    (if (equal (substring project-path
-                          (1- (length project-path))) "/" )
-        (setq project-path (substring project-path 0 (1- (length project-path)))))
-    (push project-path rsync-args)
+    ;; a trailing slash makes a difference for rsync, trim it if any.
+    (when (equal (substring project-path
+                            (1- (length project-path))) "/" )
+      (setq project-path (substring project-path 0 (1- (length project-path)))))
+    (push project-path ping-args)
 
     (push (format "%s@%s:%s"
                   ppcompile-ssh-user
                   ppcompile-ssh-host
                   ppcompile-rsync-dst-dir)
-          rsync-args)
-    (setq rsync-args (nreverse rsync-args))
+          ping-args)
+    (setq ping-args (nreverse ping-args))
 
     (when ppcompile--debug
-      (message "ppcompile ping command: expect %s %s %s"
-               ppcompile-with-password-path
-               ppcompile-rsync-executable
-               (mapconcat #'(lambda (arg) (format "'%s'" arg))
-                          rsync-args " ")))
+      (if (not expect-available-p)
+          (message "ppcompile ping command: %s %s"
+                   ppcompile-rsync-executable
+                   (mapconcat #'(lambda (arg) (format "'%s'" arg))
+                              ping-args " "))
+        (message "ppcompile ping command: %s %s %s %s"
+                 ppcompile-expect-executable
+                 ppcompile-with-password-path
+                 ppcompile-rsync-executable
+                 (mapconcat #'(lambda (arg) (format "'%s'" arg))
+                            ping-args " "))
+        (setq process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
+                                                (ppcompile-get-ssh-password))
+                                        process-environment))))
+
     (with-temp-buffer
-      (setq rsync-status (apply #'call-process
-                                ppcompile-expect-executable
-                                nil
-                                (current-buffer)
-                                nil
-                                ppcompile-with-password-path
-                                ppcompile-rsync-executable
-                                rsync-args))
-      (setq rsync-output (buffer-substring-no-properties (point-min) (point-max))))
-    (cons rsync-status rsync-output)))
+      (setq rsync-status (if expect-available-p (apply #'call-process
+                                                       ppcompile-expect-executable
+                                                       nil
+                                                       (current-buffer)
+                                                       nil
+                                                       ppcompile-with-password-path
+                                                       ppcompile-rsync-executable
+                                                       ping-args)
+                           (apply #'call-process
+                                  ppcompile-rsync-executable
+                                  nil
+                                  (current-buffer)
+                                  nil
+                                  ping-args)))
+      (setq ping-output (buffer-substring-no-properties (point-min) (point-max))))
+    (cons rsync-status ping-output)))
 
 (defun ppcompile--pong ()
   "Compile current project remotely.
 And replace remote paths with local ones in the output."
   (let* ((default-directory (ppcompile--project-root))
-         (compilation-environment (cons (format "PPCOMPILE_PASSWORD=%s"
-                                                (ppcompile-get-ssh-password))
-                                        compilation-environment))
+         (compilation-environment compilation-environment)
+         (expect-available-p (ppcompile--expect-available-p))
          compile-command)
     (save-some-buffers)
     (setq ppcompile--current-buffer (current-buffer))
     (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to achieve this in an elegant way?
-    (setq compile-command (format "%s %s %s -p %d %s %s@%s %s"
-                                  ppcompile-expect-executable
-                                  ppcompile-with-password-path
-                                  ppcompile-ssh-executable
-                                  ppcompile-ssh-port
-                                  ppcompile-ssh-additional-args
-                                  ppcompile-ssh-user
-                                  ppcompile-ssh-host
-                                  ppcompile-remote-compile-command))
+
+    (if (not expect-available-p)
+        (setq compile-command (format "%s -p %d %s %s@%s %s"
+                                      ppcompile-ssh-executable
+                                      ppcompile-ssh-port
+                                      ppcompile-ssh-additional-args
+                                      ppcompile-ssh-user
+                                      ppcompile-ssh-host
+                                      ppcompile-remote-compile-command))
+      (setq compilation-environment (cons (format "PPCOMPILE_PASSWORD=%s"
+                                                  (ppcompile-get-ssh-password))
+                                          compilation-environment))
+      (setq compile-command (format "%s %s %s -p %d %s %s@%s %s"
+                                    ppcompile-expect-executable
+                                    ppcompile-with-password-path
+                                    ppcompile-ssh-executable
+                                    ppcompile-ssh-port
+                                    ppcompile-ssh-additional-args
+                                    ppcompile-ssh-user
+                                    ppcompile-ssh-host
+                                    ppcompile-remote-compile-command))
+      )
     (when ppcompile--debug
       (message "ppcompile pong command: %s" compile-command))
     (compilation-start compile-command)))
@@ -246,7 +279,7 @@ If DONT-PONG is not nil, it will only rsync the project."
   (interactive "P")
   (let* ((rsync-result (ppcompile--ping)))
     (if (not (eq 0 (car rsync-result)))
-        (message "Failed to rsync current project, error: %s" (cdr rsync-result))
+        (message "Failed to rsync current project, rsync output is: %s" (cdr rsync-result))
       (unless dont-pong
         (ppcompile--pong)))))
 
