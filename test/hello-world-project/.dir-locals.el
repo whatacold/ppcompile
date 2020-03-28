@@ -2,6 +2,7 @@
 ;;; For more information see (info "(emacs) Directory Variables")
 
 ((nil
+  (eval setq project-find-functions #'(lambda (dir) (cons 'test dir)))
   (ppcompile-remote-compile-command . "make -C /tmp/hello-world-project")
   (eval setq ppcompile-path-mapping-alist
         `(("/tmp/" . ,(file-name-directory (directory-file-name default-directory)))))

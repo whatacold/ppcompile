@@ -29,12 +29,18 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 
 - =M-x ppcompile-config-project= to configure various settings for a project.
 
-  This command's detail can be found on section [[*Configurations][Configurations]]
+  This command's detail can be found on section [[*Configurations][Configurations]] .
+- =M-x ppcompile-ping= to rsync the project.
+- =M-x ppcompile-pong= to compile the project remotely.
+
+  It respects the =compilation-read-command= variable of =compile=, which means it will give you a chance to edit the compile command if you set it to non-=nil=. The input history is kept in =ppcompile--remote-command-history=, you can hit =M-n= and =M-p= to navigate the history list.
+
+  If you want to change the prompt behaviour temporarily, prefix the command, i.e. =C-u M-x ppcompile-pong=.
 - =M-x ppcompile= to ping-pong compile the current project.
 
-  It rsync's the current project, compiles it remotely, takes back the output and post-process it, so that =compilation-mode= works perfectly.
+  It rsync's the current project to the remote host, compiles it remotely, takes back the output and convert the remote paths to the local ones, so that =compilation-mode= works perfectly.
 
-  Sometimes you may just want to rsync files only, then prefix the command, i.e. =M-u M-x ppcompile= .
+  This command simply executes =ppcompile-ping= and =ppcompile-pong= sequentially. The command prompt behaviour is exactly same the =M-x ppcompile-pong=.
 - =M-x ppcompile-toggle-debug= to toggle debugging.
 - =M-x ppcompile-get-ssh-password= to get the password of the current project, if password authentication is used, this command is intended for debugging.
 
@@ -43,6 +49,8 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 There are quite some configuration to set, globally or per project.
 
 =M-x ppcompile-config-project= will guide you to set them up in =.dir-locals.el= in the project root, if you have more than one remote hosts to "compile" different projects, which often is the case. You can then fine-tune the =.dir-locals.el= file after finishing the command.
+
+The input history is kept in the variable =ppcompile--config-history=, so you can hit =M-n= and =M-p= to get your previous input to save you some effort.
 
 The configurations covered by that command include:
 

@@ -28,8 +28,8 @@
 ;;; Commentary:
 
 ;; This package tries to ease the workflow that consists of coding locally,
-;; compiling remotely, and fixing errors with `next-error' locally.
-;; and compiling remotely, it depends on built-in packages: auth-source,
+;; compiling remotely, and fixing errors with `next-error' and `previous-error' locally.
+;; It depends on built-in packages: auth-source,
 ;; project , files-x and compile, and external programs: rsync, ssh, expect.
 
 ;;; Code:
@@ -40,7 +40,7 @@
 (require 'files-x)
 
 (defgroup ppcompile nil
-  "Run a ping pong compilation to build remotely and fix errors locally."
+  "Ping pong compile."
   :group 'tools)
 
 (defcustom ppcompile-ssh-executable (if (eq system-type 'windows-nt)
@@ -110,7 +110,7 @@ Do not contain spaces in the value."
   :type 'string
   :group 'ppcompile)
 
-(defcustom ppcompile-remote-compile-command nil
+(defcustom ppcompile-remote-compile-command "make -k"
   "Compile command to build the project on the remote machine."
   :type 'string
   :group 'ppcompile)
@@ -128,8 +128,14 @@ should be in absolute path."
 (defvar ppcompile--debug nil
   "If non-nil, log additional messages while using.")
 
-(defvar ppcompile--history nil
-  "History list of user input.")
+(defvar ppcompile--last-remote-command ""
+  "The last remote command inputted by the user.")
+
+(defvar ppcompile--config-history nil
+  "History list of user configuration input.")
+
+(defvar ppcompile--remote-command-history nil
+  "History list of the user's remote commands.")
 
 (defun ppcompile--expect-available-p ()
   "Predicate whether `expect' and the helper script are both available."
@@ -166,8 +172,10 @@ or else fallback to use `git' root directory containing `.git'."
                                                   (file-directory-p (expand-file-name ".git" dir))))
       default-directory))
 
-(defun ppcompile--ping ()
+;;;###autoload
+(defun ppcompile-ping ()
   "Rsync current project from local machine to remote one."
+  (interactive)
   (let* ((default-directory (ppcompile--project-root))
          (project-path (expand-file-name default-directory))
          (expect-available-p (ppcompile--expect-available-p))
@@ -231,57 +239,75 @@ or else fallback to use `git' root directory containing `.git'."
       (setq ping-output (buffer-substring-no-properties (point-min) (point-max))))
     (cons rsync-status ping-output)))
 
-(defun ppcompile--pong ()
-  "Compile current project remotely.
-And replace remote paths with local ones in the output."
+(defun ppcompile-pong (flip-pong-prompt-p)
+  "Compile the project remotely.
+
+And replace remote paths with local ones in the *compilation* buffer,
+So that \\[next-error] and \\[previous-error] work correctly.
+
+If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-read-command' temporarily."
+  (interactive "P")
   (let* ((default-directory (ppcompile--project-root))
          (compilation-environment compilation-environment)
          (expect-available-p (ppcompile--expect-available-p))
-         compile-command)
-    (save-some-buffers)
+         (compilation-read-command (if flip-pong-prompt-p
+                                       (not compilation-read-command)
+                                     compilation-read-command))
+         pong-command
+         user-prompt-command)
     (setq ppcompile--current-buffer (current-buffer))
-    (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to achieve this in an elegant way?
+    (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to do this elegantly?
 
     (if (not expect-available-p)
-        (setq compile-command (format "%s -p %d %s %s@%s %s"
-                                      ppcompile-ssh-executable
-                                      ppcompile-ssh-port
-                                      ppcompile-ssh-additional-args
-                                      ppcompile-ssh-user
-                                      ppcompile-ssh-host
-                                      ppcompile-remote-compile-command))
+        (setq pong-command (format "%s -p %d %s %s@%s %s"
+                                   ppcompile-ssh-executable
+                                   ppcompile-ssh-port
+                                   ppcompile-ssh-additional-args
+                                   ppcompile-ssh-user
+                                   ppcompile-ssh-host
+                                   ppcompile-remote-compile-command))
       (setq compilation-environment (cons (format "PPCOMPILE_PASSWORD=%s"
                                                   (ppcompile-get-ssh-password))
                                           compilation-environment))
-      (setq compile-command (format "%s %s %s -p %d %s %s@%s %s"
-                                    ppcompile-expect-executable
-                                    ppcompile-with-password-script-path
-                                    ppcompile-ssh-executable
-                                    ppcompile-ssh-port
-                                    ppcompile-ssh-additional-args
-                                    ppcompile-ssh-user
-                                    ppcompile-ssh-host
-                                    ppcompile-remote-compile-command))
+      (setq pong-command (format "%s %s %s -p %d %s %s@%s %s"
+                                 ppcompile-expect-executable
+                                 ppcompile-with-password-script-path
+                                 ppcompile-ssh-executable
+                                 ppcompile-ssh-port
+                                 ppcompile-ssh-additional-args
+                                 ppcompile-ssh-user
+                                 ppcompile-ssh-host
+                                 ppcompile-remote-compile-command))
       )
+
+    (when compilation-read-command
+      (setq user-prompt-command (read-from-minibuffer
+                                 "[ppcompile] remote compile command (`M-n' to get the default): "
+                                 nil
+                                 nil
+                                 nil
+                                 'ppcompile--remote-command-history
+                                 (if (> (length ppcompile--last-remote-command) 0)
+                                     ppcompile--last-remote-command
+                                   pong-command)))
+      (when (> (length user-prompt-command) 0)
+        (setq ppcompile--last-remote-command user-prompt-command)
+        (setq pong-command user-prompt-command)))
+
     (when ppcompile--debug
-      (message "ppcompile pong command: %s" compile-command))
-    (compilation-start compile-command)))
+      (message "ppcompile pong command: %s" pong-command))
+    (compile pong-command)))
 
 ;;;###autoload
-(defun ppcompile (&optional dont-pong)
+(defun ppcompile (&optional flip-pong-prompt-p)
   "Ping-pong compile current project.
 
-Where ping means rsync the project to a remote machine,
-and pong means compiling remotely and get the
-compilation output, including errors, back.
-
-If DONT-PONG is not nil, it will only rsync the project."
+If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-read-command' temporarily."
   (interactive "P")
-  (let* ((rsync-result (ppcompile--ping)))
+  (let* ((rsync-result (ppcompile-ping)))
     (if (not (eq 0 (car rsync-result)))
         (message "Failed to rsync current project, rsync output is: %s" (cdr rsync-result))
-      (unless dont-pong
-        (ppcompile--pong)))))
+      (ppcompile-pong flip-pong-prompt-p))))
 
 ;;;###autoload
 (defun ppcompile-toggle-debug ()
@@ -326,37 +352,38 @@ nil returned if no password configured."
   (interactive)
   (save-excursion
     (let ((default-directory (ppcompile--project-root))
-          host port user dst-dir compile-command modified-p)
+          host port user dst-dir pong-command modified-p)
       (setq host (read-from-minibuffer "[ppcompile] ssh host: "
                                        nil
                                        nil
                                        nil
-                                       'ppcompile--history))
+                                       'ppcompile--config-history))
       (setq port (string-to-number (read-from-minibuffer "[ppcompile] ssh port: "
                                                          nil
                                                          nil
                                                          nil
-                                                         'ppcompile--history)))
+                                                         'ppcompile--config-history
+                                                         "22")))
       (setq user (read-from-minibuffer "[ppcompile] ssh user: "
                                        nil
                                        nil
                                        nil
-                                       'ppcompile--history))
+                                       'ppcompile--config-history))
       (setq dst-dir (read-from-minibuffer "[ppcompile] remote containing directory to rsync it: "
                                           nil
                                           nil
                                           nil
-                                          'ppcompile--history))
-      (setq compile-command (read-from-minibuffer "[ppcompile] compile command (`M-n' to get started): "
-                                                  nil
-                                                  nil
-                                                  nil
-                                                  'ppcompile--history
-                                                  (format "make -k -C %s/%s"
-                                                          dst-dir
-                                                          (file-name-nondirectory
-                                                           (directory-file-name
-                                                            (ppcompile--project-root))))))
+                                          'ppcompile--config-history))
+      (setq pong-command (read-from-minibuffer "[ppcompile] compile command (`M-n' to get started): "
+                                               nil
+                                               nil
+                                               nil
+                                               'ppcompile--config-history
+                                               (format "make -k -C %s/%s"
+                                                       dst-dir
+                                                       (file-name-nondirectory
+                                                        (directory-file-name
+                                                         (ppcompile--project-root))))))
       (when (> (length host) 0)
         (setq modified-p t)
         (add-dir-local-variable nil 'ppcompile-ssh-host host))
@@ -370,14 +397,14 @@ nil returned if no password configured."
         (setq modified-p t)
         (add-dir-local-variable nil 'ppcompile-rsync-dst-dir dst-dir)
 
-        ;; FIXME may have duplicates
+        ;; FIXME The mapping in the .dir-locals.el file may have duplicates
         (push (cons dst-dir (expand-file-name (concat default-directory "/../")))
               ppcompile-path-mapping-alist)
         (add-dir-local-variable nil 'eval `(setq ppcompile-path-mapping-alist
                                                  ',ppcompile-path-mapping-alist)))
-      (when (> (length compile-command) 0)
+      (when (> (length pong-command) 0)
         (setq modified-p t)
-        (add-dir-local-variable nil 'ppcompile-remote-compile-command compile-command))
+        (add-dir-local-variable nil 'ppcompile-remote-compile-command pong-command))
 
       (when modified-p
         (when (y-or-n-p (format "Save %s.dir-locals.el? " default-directory))
