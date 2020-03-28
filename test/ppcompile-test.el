@@ -64,6 +64,21 @@
                         " /home/baz/Pellentesque sem mauris")
                 (buffer-string))))))
 
+(ert-deftest test-expect-available-p ()
+  (let ((ppcompile-expect-executable "/tmp/fake-expect"))
+    (should-not (ppcompile--expect-available-p))
+
+    (shell-command "touch /tmp/fake-expect")
+    (should-not (ppcompile--expect-available-p))
+
+    (shell-command "chmod +x /tmp/fake-expect")
+    (should (ppcompile--expect-available-p))
+
+    (setq ppcompile-with-password-script-path "/tmp/with-password.exp")
+    (should-not (ppcompile--expect-available-p))
+
+    (shell-command "rm /tmp/fake-expect")))
+
 (ert-deftest test-with-sshd ()
   "Test the ping-pong compile function with a ad-hoc sshd server,
 which listens at localhost:22000 by running `/usr/sbin/sshd -p 22000'.
