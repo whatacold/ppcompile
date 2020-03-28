@@ -50,7 +50,7 @@ The above configuration often may vary from projects to projects, they are often
 - =ppcompile-ssh-executable= :: The =ssh= executable
 - =ppcompile-rsync-executable= :: The =rsync= executable
 - =ppcompile-expect-executable= :: The =expect= executable
-- =ppcompile-with-password-path= :: The path of the helper expect script =with-password.exp=.
+- =ppcompile-with-password-script-path= :: The path of the helper expect script =with-password.exp=.
 
   The default value may be wrong if your =.elc= file isn't in the same directory of the =with-password.exp=. If this file path doesn't exists, then only SSH public key authentication works.
 

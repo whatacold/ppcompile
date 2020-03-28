@@ -64,7 +64,7 @@
   :type 'string
   :group 'ppcompile)
 
-(defcustom ppcompile-with-password-path
+(defcustom ppcompile-with-password-script-path
   (concat (file-name-directory (or load-file-name buffer-file-name))
           "with-password.exp")
   "The path of the helper expect script `with-password.exp'."
@@ -133,7 +133,7 @@ should be in absolute path."
 
 (defun ppcompile--expect-available-p ()
   "Predicate whether `expect' and the helper script are both available."
-  (and (file-exists-p ppcompile-with-password-path)
+  (and (file-exists-p ppcompile-with-password-script-path)
        (file-executable-p (or (executable-find ppcompile-expect-executable)
                               ppcompile-expect-executable))))
 
@@ -205,7 +205,7 @@ or else fallback to use `git' root directory containing `.git'."
                               ping-args " "))
         (message "ppcompile ping command: %s %s %s %s"
                  ppcompile-expect-executable
-                 ppcompile-with-password-path
+                 ppcompile-with-password-script-path
                  ppcompile-rsync-executable
                  (mapconcat #'(lambda (arg) (format "'%s'" arg))
                             ping-args " "))
@@ -219,7 +219,7 @@ or else fallback to use `git' root directory containing `.git'."
                                                        nil
                                                        (current-buffer)
                                                        nil
-                                                       ppcompile-with-password-path
+                                                       ppcompile-with-password-script-path
                                                        ppcompile-rsync-executable
                                                        ping-args)
                            (apply #'call-process
@@ -255,7 +255,7 @@ And replace remote paths with local ones in the output."
                                           compilation-environment))
       (setq compile-command (format "%s %s %s -p %d %s %s@%s %s"
                                     ppcompile-expect-executable
-                                    ppcompile-with-password-path
+                                    ppcompile-with-password-script-path
                                     ppcompile-ssh-executable
                                     ppcompile-ssh-port
                                     ppcompile-ssh-additional-args
