@@ -296,7 +296,8 @@ If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-re
 
     (when ppcompile--debug
       (message "ppcompile pong command: %s" pong-command))
-    (compile pong-command)))
+    (save-some-buffers)
+    (compilation-start pong-command)))
 
 ;;;###autoload
 (defun ppcompile (&optional flip-pong-prompt-p)
