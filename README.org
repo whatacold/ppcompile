@@ -58,7 +58,7 @@ The configurations covered by that command include:
 - =ppcompile-ssh-port= :: the ssh port of remote host, defaults to 22
 - =ppcompile-ssh-user= :: user name, which defaults to currently logged in user, as returned by =(user-login-name)=
 - =ppcompile-rsync-dst-dir= :: remote containing directory for the project
-- =ppcompile-remote-compile-command= :: compile command on the remote host
+- =ppcompile-remote-compile-command= :: The compile command executed under the remote project directory.
 - =ppcompile-path-mapping-list= :: alist for path mapping
 
   The =car= of each whose element is a remote path, and the =cdr= a local path, all paths should be absolute paths.

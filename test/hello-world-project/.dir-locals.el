@@ -3,7 +3,7 @@
 
 ((nil
   (eval setq project-find-functions #'(lambda (dir) (cons 'test dir)))
-  (ppcompile-remote-compile-command . "make -C /tmp/hello-world-project")
+  (ppcompile-remote-compile-command . "make -C . -k")
   (eval setq ppcompile-path-mapping-alist
         `(("/tmp/" . ,(file-name-directory (directory-file-name default-directory)))))
   (ppcompile-rsync-dst-dir . "/tmp/")
