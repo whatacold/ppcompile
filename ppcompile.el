@@ -263,26 +263,25 @@ If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-re
          (project-basename (file-name-nondirectory
                             (directory-file-name
                              (ppcompile--project-root))))
-         pong-command
-         user-prompt-command)
+         (user-prompt-command-initial (if (> (length ppcompile--remote-command-history) 0)
+                                          (car ppcompile--remote-command-history)
+                                        ppcompile-remote-compile-command))
+         pong-command)
     (setq ppcompile--current-buffer (current-buffer))
     (add-to-list 'compilation-finish-functions #'ppcompile--replace-path) ; XXX how to do this elegantly?
 
     (when compilation-read-command
-      (setq user-prompt-command (read-from-minibuffer
-                                 (format "[ppcompile] remote compile command under \"%s/%s\" (`M-n' to get the default): "
-                                         ppcompile-rsync-dst-dir
-                                         project-basename)
-                                 nil
-                                 nil
-                                 nil
-                                 'ppcompile--remote-command-history
-                                 (if (> (length ppcompile--last-remote-command) 0)
-                                     ppcompile--last-remote-command
-                                   ppcompile-remote-compile-command)))
-      (when (> (length user-prompt-command) 0)
-        (setq ppcompile--last-remote-command user-prompt-command)
-        (setq remote-compile-command user-prompt-command)))
+      (setq remote-compile-command (read-from-minibuffer
+                                    (format "[ppcompile] remote compile command under \"%s/%s\" (`M-n' to get the default): "
+                                            ppcompile-rsync-dst-dir
+                                            project-basename)
+                                    nil
+                                    nil
+                                    nil
+                                    'ppcompile--remote-command-history
+                                    user-prompt-command-initial))
+      (when (string-equal "" remote-compile-command)
+        (setq remote-compile-command user-prompt-command-initial)))
 
     (if (not expect-available-p)
         (setq pong-command (format "%s -p %d %s %s@%s 'cd %s/%s && %s'"
