@@ -134,9 +134,6 @@ should be in absolute path."
 (defvar ppcompile--debug nil
   "If non-nil, log additional messages while using.")
 
-(defvar ppcompile--last-remote-command ""
-  "The last remote command inputted by the user.")
-
 (defvar ppcompile--config-history nil
   "History list of user configuration input.")
 
