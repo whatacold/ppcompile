@@ -224,6 +224,7 @@ or else fallback to use `git' root directory containing `.git'."
                                                 (ppcompile-get-ssh-password))
                                         process-environment))))
 
+    (save-some-buffers)
     (with-temp-buffer
       (setq rsync-status (if expect-available-p (apply #'call-process
                                                        ppcompile-expect-executable
@@ -307,7 +308,6 @@ If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-re
 
     (when ppcompile--debug
       (message "ppcompile pong command: %s" pong-command))
-    (save-some-buffers)
     (compilation-start pong-command)
 
     (with-current-buffer "*compilation*"
