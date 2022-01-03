@@ -1,20 +1,23 @@
 This Emacs package tries to ease the development workflow that consists of coding locally, compiling remotely, and fixing errors with =next-error= locally, which is the typical development cycle for C/C++ projects.
 
-It =rsync='s ("ping") current project to a remote machine, compiles it there, and convert remote paths in the =*compilation*= output to local paths ("pong") according to a configured mapping alist so that =compilation-mode= can find the files containing errors or warnings correctly while executing =M-x next-error= and =M-x previous-error=.
+It works in 2 steps, like playing a ping-pong game:
+1. ping: =rsync= current project to a remote machine, compiles it there,
+2. pong: send the compilation result back from the remote machine, convert remote paths in the =*compilation*= output to local paths according to a configured mapping alist
+   Then =compilation-mode= can find the files containing errors or warnings correctly while executing =M-x next-error= and =M-x previous-error=.
 
 #+BEGIN_SRC artist
 
-                 +---------+                                  +--------+
-                 |         |              ping: rsync         |        |
-                 |         | -------------------------------> |        |
-                 |  local  |                                  | remote |
-                 |         | <------------------------------- |        |
-                 |         |   pong: compile & convert paths  |        |
-                 +---------+                                  +--------+
+                 +---------+                                              +--------+
+                 |         |              ping: rsync files               |        |
+                 |         | -------------------------------------------> |        |
+                 |  local  |                                              | remote |
+                 |         | <------------------------------------------- |        |
+                 |         |   pong: compile result with converted paths  |        |
+                 +---------+                                              +--------+
 
 #+END_SRC
 
-The project root is detected via =(project-current)=, if it fails =ppcompile= will take the top-level =git= directory as project root.
+The project root is detected via =(project-current)=, if it fails =ppcompile= will take the top-level =git= directory as the project root.
 
 Currently, it's only tested with GNU Emacs 26.3 on Linux.
 
@@ -23,7 +26,9 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 - built-in packages: =compile=, =auth-source=, =project=, and =files-x=
 - external programs: =rsync=, =ssh=, =expect=.
 
-  Make sure you have these on your system. It will avoid using =expect= if =expect= isn't available on your system, so SSH public key authentication is mandatory in this case.
+  Make sure you have these on your system.
+
+  It will not use =expect= if =expect= isn't available on your system, then SSH public key authentication is mandatory in this case.
 
 * How to Use
 
