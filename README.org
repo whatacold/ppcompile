@@ -1,8 +1,9 @@
-This Emacs package tries to ease the development workflow that consists of coding locally, compiling remotely, and fixing errors with =next-error= locally, which is the typical development cycle for C/C++ projects.
+This Emacs package tries to ease the development workflow that consists of coding locally, compiling remotely, and then fixing errors with =next-error= locally, which is the typical development cycle for C/C++ projects.
 
 It works in 2 steps, like playing a ping-pong game:
 1. ping: =rsync= current project to a remote machine, compiles it there,
-2. pong: send the compilation result back from the remote machine, convert remote paths in the =*compilation*= output to local paths according to a configured mapping alist
+2. pong: send the compilation result back from the remote machine, convert remote paths in the =*compilation*= output to local paths according to the alist =ppcompile-path-mapping-list=
+
    Then =compilation-mode= can find the files containing errors or warnings correctly while executing =M-x next-error= and =M-x previous-error=.
 
 #+BEGIN_SRC artist
@@ -68,7 +69,9 @@ The configurations covered by that command include:
 
   The =car= of each whose element is a remote path, and the =cdr= a local path, all paths should be absolute paths.
 
-The above configuration often may vary from projects to projects, they are often set per project. There are also other global configurations, which have defaults:
+The above configuration may vary from projects to projects, so they are typically set per project.
+
+There are also other global configurations, which have defaults:
 - =ppcompile-ssh-additional-args= :: additional arguments for the =ssh= command line
 - =ppcompile-rsync-additional-args= :: additional arguments for the =rsync= command line
 - =ppcompile-rsync-exclude-list= :: a list specifying files you want to exclude, such as binary files.
@@ -86,13 +89,13 @@ machine localhost port 22 login try password 1
 
 Also, pay attention to Emacs variable =auth-sources= to include your setting.
 
-That being said, public key authentication is recommended thought, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
+That being said, public key authentication is recommended though, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
 
 * Troubleshooting
 
 After the above settings, chances are that it still doesn't work. You can troubleshoot it by following these steps:
 
-1. Turn on the debugging flag by =M-x ppcompile-toggle-debug=
+1. Turn on debugging by =M-x ppcompile-toggle-debug=
 
    Re-run it once again, and check out the shell commands in the =*Message*= buffer, and if there is setting wrong. Run the command on a terminal manually, to see if there is more error info.
 
