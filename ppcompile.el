@@ -5,7 +5,7 @@
 ;; URL: https://github.com/whatacold/ppcompile
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "24"))
-;; Homepage: homepage
+;; Homepage: https://github.com/whatacold/ppcompile
 ;; Keywords: tools
 
 
@@ -30,7 +30,8 @@
 ;; This package tries to ease the workflow that consists of coding locally,
 ;; compiling remotely, and fixing errors with `next-error' and `previous-error' locally.
 ;; It depends on built-in packages: auth-source,
-;; project , files-x and compile, and external programs: rsync, ssh, expect.
+;; project , files-x and compile.
+;; And it also depends on external programs: rsync, ssh, and expect.
 
 ;;; Code:
 
@@ -168,6 +169,7 @@ Argument _FINISH-MSG is a string describing how the process finished."
 
 (defun ppcompile--project-root ()
   "Find the root directory of current project.
+
 If `project-current' finds the root, return it;
 or else fallback to use `git' root directory containing `.git'."
   (or (cdr (project-current))
@@ -249,7 +251,8 @@ or else fallback to use `git' root directory containing `.git'."
 And replace remote paths with local ones in the *compilation* buffer,
 So that \\[next-error] and \\[previous-error] work correctly.
 
-If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-read-command' temporarily."
+If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable
+`compilation-read-command' when executing this function."
   (interactive "P")
   (let* ((default-directory (ppcompile--project-root))
          (compilation-environment compilation-environment)
@@ -270,7 +273,7 @@ If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-re
 
     (when compilation-read-command
       (setq remote-compile-command (read-from-minibuffer
-                                    (format "[ppcompile] remote compile command under \"%s/%s\" (`M-n' to get the default): "
+                                    (format "[ppcompile] on remote dir \"%s/%s\" (`M-n' to get the default): "
                                             ppcompile-rsync-dst-dir
                                             project-basename)
                                     nil
@@ -317,7 +320,8 @@ If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-re
 (defun ppcompile (&optional flip-pong-prompt-p)
   "Ping-pong compile current project.
 
-If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable `compilation-read-command' temporarily."
+If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable
+`compilation-read-command' when executing this function."
   (interactive "P")
   (let* ((rsync-result (ppcompile-ping)))
     (if (not (eq 0 (car rsync-result)))

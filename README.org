@@ -39,9 +39,12 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 - =M-x ppcompile-ping= to rsync the project.
 - =M-x ppcompile-pong= to compile the project remotely.
 
-  It respects the =compilation-read-command= variable of =compile=, which means it will give you a chance to edit the compile command if you set it to non-=nil=. The input history is kept in =ppcompile--remote-command-history=, you can hit =M-n= and =M-p= to navigate the history list.
+  It respects the =compilation-read-command= variable of =compile=, which means it will give you a chance to edit the compile command if you set it to non-=nil=.
+
+  The input history is kept in =ppcompile--remote-command-history=, you can hit =M-n= to get the default compile command (on the remote machine), and hit more =M-n= and =M-p= to navigate the command history.
 
   If you want to change the prompt behavior temporarily, prefix the command, i.e. =C-u M-x ppcompile-pong=.
+
 - =M-x ppcompile= to ping-pong compile the current project.
 
   It rsync's the current project to the remote host, compiles it remotely, takes back the output and converts the remote paths to the local ones, so that =compilation-mode= works perfectly.

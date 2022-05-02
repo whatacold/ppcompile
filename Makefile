@@ -7,7 +7,7 @@ all: compile checkdoc test
 compile:
 	$(EMACS) -Q -batch -L . --eval "(setq byte-compile-error-on-warn t)" -f batch-byte-compile ppcompile.el
 
-# TODO How to make it error out if something wrong?
+# TODO How to make it error out if something goes wrong?
 checkdoc:
 	$(EMACS) -Q -batch --eval '(checkdoc-file "ppcompile.el")'
 
