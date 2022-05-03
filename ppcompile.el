@@ -273,7 +273,7 @@ If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable
 
     (when compilation-read-command
       (setq remote-compile-command (read-from-minibuffer
-                                    (format "[ppcompile] on remote dir \"%s/%s\" (`M-n' to get the default): "
+                                    (format "[ppcompile] on remote dir \"%s/%s\": "
                                             ppcompile-rsync-dst-dir
                                             project-basename)
                                     nil
