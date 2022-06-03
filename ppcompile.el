@@ -4,7 +4,7 @@
 ;; Maintainer: Guangwang Huang
 ;; URL: https://github.com/whatacold/ppcompile
 ;; Version: 0.1
-;; Package-Requires: ((emacs "24"))
+;; Package-Requires: ((emacs "25.1"))
 ;; Homepage: https://github.com/whatacold/ppcompile
 ;; Keywords: tools
 
