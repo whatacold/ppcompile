@@ -6,7 +6,7 @@ It works in 2 steps, like playing a ping-pong game:
 
    Then =compilation-mode= can find the files containing errors or warnings correctly while executing =M-x next-error= and =M-x previous-error=.
 
-#+BEGIN_SRC artist
+#+begin_src artist
 
                  +---------+                                              +--------+
                  |         |              ping: rsync files               |        |
@@ -16,7 +16,7 @@ It works in 2 steps, like playing a ping-pong game:
                  |         |   pong: compile result with converted paths  |        |
                  +---------+                                              +--------+
 
-#+END_SRC
+#+end_src
 
 The project root is detected via =(project-current)=, if it fails =ppcompile= will take the top-level =git= directory as the project root.
 
@@ -36,20 +36,19 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 - =M-x ppcompile-config-project= to configure various settings for a project.
 
   This command's detail can be found in the section [[*Configurations][Configurations]].
-- =M-x ppcompile-ping= to rsync the project.
-- =M-x ppcompile-pong= to compile the project remotely.
-
-  It respects the =compilation-read-command= variable of =compile=, which means it will give you a chance to edit the compile command if you set it to non-=nil=.
-
-  The input history is kept in =ppcompile--remote-command-history=, you can hit =M-n= to get the default compile command (on the remote machine), and hit more =M-n= and =M-p= to navigate the command history.
-
-  If you want to change the prompt behavior temporarily, prefix the command, i.e. =C-u M-x ppcompile-pong=.
 
 - =M-x ppcompile= to ping-pong compile the current project.
 
-  It rsync's the current project to the remote host, compiles it remotely, takes back the output and converts the remote paths to the local ones, so that =compilation-mode= works perfectly.
+  It rsync's the current project to the remote host, compiles it remotely, takes back the output and converts the remote paths to the local ones, so that =compilation-mode= works perfectly. Or put it in another way, it executes =ppcompile-ping= and =ppcompile-pong= sequentially.
 
-  This command simply executes =ppcompile-ping= and =ppcompile-pong= sequentially. The command prompt behavior is exactly same as the =M-x ppcompile-pong= command.
+  It respects the =compilation-read-command= variable of =compile=, which means it will give you a chance to edit the compile command if you set it to non-=nil=.
+
+  The input history is kept in =ppcompile--remote-command-history=. Hit ENTER directly and it will use the last compile command. You can also hit =M-n= to get the default compile command (on the remote machine), and hit more =M-n= and =M-p= to navigate the command history.
+
+  If you want to change the prompt behavior temporarily, prefix the command, i.e. =C-u M-x ppcompile-pong=.
+
+- =M-x ppcompile-ping= to rsync the project.
+- =M-x ppcompile-pong= to compile the project remotely.
 - =M-x ppcompile-toggle-debug= to toggle debugging.
 - =M-x ppcompile-get-ssh-password= to get the password of the current project, if password authentication is used, this command is intended for debugging.
 
@@ -58,6 +57,20 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 There is quite some configuration to set, globally or per project.
 
 =M-x ppcompile-config-project= will guide you through to set them up in =.dir-locals.el= in the project root. It makes life a little bit easier if you have more than one remote hosts to compile different projects, which often is the case. You can then fine-tune the =.dir-locals.el= file after finishing the command.
+
+Here is an example of =.dir-locals.el= that resides in a project root directory:
+#+begin_src elisp
+  ;;; Directory Local Variables
+  ;;; For more information see (info "(emacs) Directory Variables")
+
+  ((nil
+    (eval . (setq ppcompile-path-mapping-alist
+                  `(("/tmp/" . ,(file-name-directory (directory-file-name (file-name-directory (buffer-file-name))))))))
+    (ppcompile-remote-compile-command . "make -C .")
+    (ppcompile-ssh-user . "test")
+    (ppcompile-ssh-host . "localhost")
+    (ppcompile-rsync-dst-dir . "/tmp/")))
+#+end_src
 
 The input history is kept in the variable =ppcompile--config-history=, so you can hit =M-n= and =M-p= to get your previous input to save you some effort.
 
@@ -85,14 +98,14 @@ There are also other global configurations, which have defaults:
 
   The default value may be wrong if your =.elc= file isn't in the same directory of the =with-password.exp=, which means the file path doesn't exist, to make SSH public key authentication mandatory.
 
-Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry per host in =~/.authinfo= looks like:
-#+BEGIN_SRC
+Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry for a host in =~/.authinfo= looks like:
+#+begin_src
 machine localhost port 22 login try password 1
-#+END_SRC
+#+end_src
 
 Also, pay attention to Emacs variable =auth-sources= to include your setting.
 
-That being said, public key authentication is recommended though, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
+That being said, **public key authentication is recommended** though, whenever it's possible, and keep various configurations including identity files in =~/.ssh/config=. ([[https://whatacold.github.io/2019-12-22-manage-ssh-connections-with-ssh-config.html][Manage SSH connections with =~/.ssh/config=]])
 
 * Troubleshooting
 
@@ -104,7 +117,7 @@ After the above settings, chances are that it still doesn't work. You can troubl
 
 2. Confirm that the password is right by =M-x ppcompile-get-ssh-password= if you're using password authentication for ssh.
 
-   Setting =auth-source= can be tricky, so this may help.
+   Setting =auth-source= can be tricky, so this may help. Also try ~M-x auth-source-forget-all-cached~ if you just changed your auth-source entries.
 
 Note that these commands should be executed on the buffers of project files, to take advantage of the configurations for that particular project.
 
