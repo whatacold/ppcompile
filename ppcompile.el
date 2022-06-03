@@ -276,7 +276,7 @@ If FLIP-PONG-PROMPT-P is not nil, it flips the value of variable
                                     (format "[ppcompile] on remote dir \"%s/%s\": "
                                             ppcompile-rsync-dst-dir
                                             project-basename)
-                                    nil
+                                    user-prompt-command-initial
                                     nil
                                     nil
                                     'ppcompile--remote-command-history
