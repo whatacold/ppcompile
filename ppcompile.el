@@ -130,7 +130,9 @@ should be in absolute path."
   :group 'ppcompile)
 
 (defvar ppcompile--current-buffer nil
-  "Internal variable to keep current buffer, in order to fetch buffer-local variables.")
+  "The current buffer before compiling.
+
+Used to fetch its buffer-local variables.")
 
 (defvar ppcompile--debug nil
   "If non-nil, log additional messages while using.")
