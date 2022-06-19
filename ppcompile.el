@@ -181,7 +181,9 @@ or else fallback to use `git' root directory containing `.git'."
 
 ;;;###autoload
 (defun ppcompile-ping ()
-  "Rsync current project from local machine to remote one."
+  "Rsync current project from local machine to remote one.
+
+Return the command exit status and its output as a cons."
   (interactive)
   (let* ((default-directory (ppcompile--project-root))
          (project-path (expand-file-name default-directory))
