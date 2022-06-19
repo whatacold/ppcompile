@@ -188,7 +188,7 @@ or else fallback to use `git' root directory containing `.git'."
          (expect-available-p (ppcompile--expect-available-p))
          (process-environment process-environment)
          (rsync-status 1)
-         (ping-args (mapcar #'(lambda (pattern) (format "--exclude=%s" pattern))
+         (ping-args (mapcar (lambda (pattern) (format "--exclude=%s" pattern))
                             ppcompile-rsync-exclude-list))
          ping-output)
     (push (format "--rsh=%s -p %d %s"
@@ -216,13 +216,13 @@ or else fallback to use `git' root directory containing `.git'."
       (if (not expect-available-p)
           (message "ppcompile ping command: %s %s"
                    ppcompile-rsync-executable
-                   (mapconcat #'(lambda (arg) (format "'%s'" arg))
+                   (mapconcat (lambda (arg) (format "'%s'" arg))
                               ping-args " "))
         (message "ppcompile ping command: %s %s %s %s"
                  ppcompile-expect-executable
                  ppcompile-with-password-script-path
                  ppcompile-rsync-executable
-                 (mapconcat #'(lambda (arg) (format "'%s'" arg))
+                 (mapconcat (lambda (arg) (format "'%s'" arg))
                             ping-args " "))
         (setq process-environment (cons (format "PPCOMPILE_PASSWORD=%s"
                                                 (ppcompile-get-ssh-password))
