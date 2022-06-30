@@ -8,13 +8,13 @@ It works in 2 steps, like playing a ping-pong game:
 
 #+begin_src artist
 
-                 +---------+                                              +--------+
-                 |         |              ping: rsync files               |        |
-                 |         | -------------------------------------------> |        |
-                 |  local  |                                              | remote |
-                 |         | <------------------------------------------- |        |
-                 |         |   pong: compile result with converted paths  |        |
-                 +---------+                                              +--------+
+                 +---------+                                          +--------+
+                 |         |          ping: rsync files               |        |
+                 |         | ---------------------------------------> |        |
+                 |  local  |                                          | remote |
+                 | (Emacs) | <--------------------------------------- |        |
+                 |         |          pong: compile & replace paths   |        |
+                 +---------+                                          +--------+
 
 #+end_src
 
@@ -30,6 +30,10 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
   Make sure you have these on your system.
 
   It will not use =expect= if =expect= isn't available on your system, then SSH public key authentication is mandatory in this case.
+
+* Installation
+
+ppcompile is now available on [[https://melpa.org/#/ppcompile][melpa]], so you can easily install it by ~M-x package-install RET ppcompile RET~
 
 * How to Use
 
