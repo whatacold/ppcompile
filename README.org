@@ -1,6 +1,6 @@
 This Emacs package tries to ease the development workflow that consists of coding locally, compiling remotely, and then fixing errors with =next-error= locally, which is the typical development cycle for C/C++ projects.
 
-It works in 2 steps, like playing a ping-pong game:
+~M-x ppcompile~ works in 2 steps under the hood, like playing a ping-pong game:
 1. ping: =rsync= current project to a remote machine, compiles it there,
 2. pong: send the compilation result back from the remote machine, convert remote paths in the =*compilation*= output to local paths according to the alist =ppcompile-path-mapping-list=
 
@@ -12,7 +12,7 @@ It works in 2 steps, like playing a ping-pong game:
                  |         |          ping: rsync files               |        |
                  |         | ---------------------------------------> |        |
                  |  local  |                                          | remote |
-                 | (Emacs) | <--------------------------------------- |        |
+                 | (Emacs) | <--------------------------------------- | (build)|
                  |         |          pong: compile & replace paths   |        |
                  +---------+                                          +--------+
 
@@ -20,9 +20,15 @@ It works in 2 steps, like playing a ping-pong game:
 
 The project root is detected via =(project-current)=, if it fails =ppcompile= will take the top-level =git= directory as the project root.
 
-Currently, it's only tested with GNU Emacs 26.3 on Linux.
+Currently, it's only tested with GNU Emacs 26.3/27.2 on Linux.
 
-* Dependencies
+* Installation
+
+[[https://melpa.org/#/ppcompile][file:https://melpa.org/packages/ppcompile-badge.svg]]
+
+ppcompile is now available on [[https://melpa.org/#/ppcompile][melpa]], so you can easily install it by ~M-x package-install RET ppcompile RET~.
+
+** Extra Dependencies
 
 - built-in packages: =compile=, =auth-source=, =project=, and =files-x=
 - external programs: =rsync=, =ssh=, =expect=.
@@ -31,15 +37,11 @@ Currently, it's only tested with GNU Emacs 26.3 on Linux.
 
   It will not use =expect= if =expect= isn't available on your system, then SSH public key authentication is mandatory in this case.
 
-* Installation
-
-ppcompile is now available on [[https://melpa.org/#/ppcompile][melpa]], so you can easily install it by ~M-x package-install RET ppcompile RET~
-
 * How to Use
 
 - =M-x ppcompile-config-project= to configure various settings for a project.
 
-  This command's detail can be found in the section [[*Configurations][Configurations]].
+  See details in the section [[*Configurations][Configurations]] below.
 
 - =M-x ppcompile= to ping-pong compile the current project.
 
@@ -49,20 +51,22 @@ ppcompile is now available on [[https://melpa.org/#/ppcompile][melpa]], so you c
 
   The input history is kept in =ppcompile--remote-command-history=. Hit ENTER directly and it will use the last compile command. You can also hit =M-n= to get the default compile command (on the remote machine), and hit more =M-n= and =M-p= to navigate the command history.
 
-  If you want to change the prompt behavior temporarily, prefix the command, i.e. =C-u M-x ppcompile-pong=.
-
 - =M-x ppcompile-ping= to rsync the project.
 - =M-x ppcompile-pong= to compile the project remotely.
+
+  If you want to change the prompt behavior temporarily, prefix the command, i.e. =C-u M-x ppcompile-pong=.
 - =M-x ppcompile-toggle-debug= to toggle debugging.
 - =M-x ppcompile-get-ssh-password= to get the password of the current project, if password authentication is used, this command is intended for debugging.
 
 * Configurations
 
-There is quite some configuration to set, globally or per project.
+There is quite some configurations to set, globally or per project.
+
+** Per-project Configurations
 
 =M-x ppcompile-config-project= will guide you through to set them up in =.dir-locals.el= in the project root. It makes life a little bit easier if you have more than one remote hosts to compile different projects, which often is the case. You can then fine-tune the =.dir-locals.el= file after finishing the command.
 
-Here is an example of =.dir-locals.el= that resides in a project root directory:
+Here is an example of =.dir-locals.el=:
 #+begin_src elisp
   ;;; Directory Local Variables
   ;;; For more information see (info "(emacs) Directory Variables")
@@ -78,7 +82,7 @@ Here is an example of =.dir-locals.el= that resides in a project root directory:
 
 The input history is kept in the variable =ppcompile--config-history=, so you can hit =M-n= and =M-p= to get your previous input to save you some effort.
 
-The configurations covered by that command include:
+The configurations covered by the command include:
 
 - =ppcompile-ssh-host= :: the remote host
 - =ppcompile-ssh-port= :: the ssh port of remote host, which defaults to 22
@@ -89,7 +93,9 @@ The configurations covered by that command include:
 
   The =car= of each whose element is a remote path, and the =cdr= a local path, all paths should be absolute paths.
 
-The above configuration may vary from projects to projects, so they are typically set per project.
+The above configurations may vary from projects to projects, so they are typically set per project.
+
+** Global Configurations
 
 There are also other global configurations, which have defaults:
 - =ppcompile-ssh-additional-args= :: additional arguments for the =ssh= command line
@@ -102,6 +108,7 @@ There are also other global configurations, which have defaults:
 
   The default value may be wrong if your =.elc= file isn't in the same directory of the =with-password.exp=, which means the file path doesn't exist, to make SSH public key authentication mandatory.
 
+** SSH Credentials
 Besides that, you may need to configure your passwords in some =auth-source= backends, for example, one entry for a host in =~/.authinfo= looks like:
 #+begin_src
 machine localhost port 22 login try password 1
@@ -133,7 +140,7 @@ Note that these commands should be executed on the buffers of project files, to 
 
 - [[https://github.com/buildfoundation/mainframer][mainframer]], a tool for remote builds, although not based on Emacs, is a more general solution with a similar idea.
 
-* Misc
+* Development
 
 - Run =make test= to test the code
 
@@ -148,5 +155,4 @@ Note that these commands should be executed on the buffers of project files, to 
 
 * Final words
 
-This was my first time to roll out a package seriously, I believe there is much to improve,
-so pull requests and issues are very welcome.
+This was my first time to roll out a package seriously, I believe there is much to improve, so pull requests and issues are very welcome.
